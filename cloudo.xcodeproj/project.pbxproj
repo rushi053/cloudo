@@ -30,19 +30,19 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		B2778F762D76DBD200098E4C /* DailyTasks */ = {
+		B2778F762D76DBD200098E4C /* Cloudo */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = DailyTasks;
+			path = Cloudo;
 			sourceTree = "<group>";
 		};
-		B2778F872D76DBD300098E4C /* DailyTasksTests */ = {
+		B2778F872D76DBD300098E4C /* CloudoTests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = DailyTasksTests;
+			path = CloudoTests;
 			sourceTree = "<group>";
 		};
-		B2778F912D76DBD300098E4C /* DailyTasksUITests */ = {
+		B2778F912D76DBD300098E4C /* CloudoUITests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = DailyTasksUITests;
+			path = CloudoUITests;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -75,9 +75,9 @@
 		B2778F6B2D76DBD200098E4C = {
 			isa = PBXGroup;
 			children = (
-				B2778F762D76DBD200098E4C /* DailyTasks */,
-				B2778F872D76DBD300098E4C /* DailyTasksTests */,
-				B2778F912D76DBD300098E4C /* DailyTasksUITests */,
+				B2778F762D76DBD200098E4C /* Cloudo */,
+				B2778F872D76DBD300098E4C /* CloudoTests */,
+				B2778F912D76DBD300098E4C /* CloudoUITests */,
 				B2778F752D76DBD200098E4C /* Products */,
 			);
 			sourceTree = "<group>";
@@ -108,7 +108,7 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				B2778F762D76DBD200098E4C /* DailyTasks */,
+				B2778F762D76DBD200098E4C /* Cloudo */,
 			);
 			name = DailyTasks;
 			packageProductDependencies = (
@@ -131,7 +131,7 @@
 				B2778F862D76DBD300098E4C /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
-				B2778F872D76DBD300098E4C /* DailyTasksTests */,
+				B2778F872D76DBD300098E4C /* CloudoTests */,
 			);
 			name = DailyTasksTests;
 			packageProductDependencies = (
@@ -154,7 +154,7 @@
 				B2778F902D76DBD300098E4C /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
-				B2778F912D76DBD300098E4C /* DailyTasksUITests */,
+				B2778F912D76DBD300098E4C /* CloudoUITests */,
 			);
 			name = DailyTasksUITests;
 			packageProductDependencies = (
@@ -186,7 +186,7 @@
 					};
 				};
 			};
-			buildConfigurationList = B2778F6F2D76DBD200098E4C /* Build configuration list for PBXProject "DailyTasks" */;
+			buildConfigurationList = B2778F6F2D76DBD200098E4C /* Build configuration list for PBXProject "cloudo" */;
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -395,10 +395,11 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_ASSET_PATHS = "\"DailyTasks/Preview Content\"";
+				DEVELOPMENT_ASSET_PATHS = "\"Cloudo/Preview Content\"";
 				DEVELOPMENT_TEAM = 6C72999Z38;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = Cloudo;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -409,7 +410,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.rushi.DailyTasks;
+				PRODUCT_BUNDLE_IDENTIFIER = com.rushi.cloudo;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
@@ -424,10 +425,11 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_ASSET_PATHS = "\"DailyTasks/Preview Content\"";
+				DEVELOPMENT_ASSET_PATHS = "\"Cloudo/Preview Content\"";
 				DEVELOPMENT_TEAM = 6C72999Z38;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = Cloudo;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -438,7 +440,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.rushi.DailyTasks;
+				PRODUCT_BUNDLE_IDENTIFIER = com.rushi.cloudo;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
@@ -521,7 +523,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		B2778F6F2D76DBD200098E4C /* Build configuration list for PBXProject "DailyTasks" */ = {
+		B2778F6F2D76DBD200098E4C /* Build configuration list for PBXProject "cloudo" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				B2778F962D76DBD300098E4C /* Debug */,
