@@ -71,14 +71,32 @@ struct TaskRowView: View {
     
     var body: some View {
         Link(destination: URL(string: "cloudo://complete-task/\(task.id)")!) {
-            HStack {
+            HStack(spacing: 12) {
+                // Checkbox
                 Image(systemName: task.completed ? "checkmark.circle.fill" : "circle")
+                    .font(.system(size: 18))
                     .foregroundColor(task.completed ? .green : .gray)
                 
-                Text(task.title)
-                    .lineLimit(1)
-                    .strikethrough(task.completed)
-                    .foregroundColor(task.completed ? .gray : .primary)
+                // Task title with category pill
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(task.title)
+                        .font(.system(size: 14, weight: task.priority == 3 ? .medium : .regular))
+                        .lineLimit(1)
+                        .strikethrough(task.completed)
+                        .foregroundColor(task.completed ? .gray : .primary)
+                    
+                    if !task.category.isEmpty {
+                        Text(task.category)
+                            .font(.system(size: 10))
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(
+                                Capsule()
+                                    .fill(categoryColor(for: task.category).opacity(0.15))
+                            )
+                            .foregroundColor(categoryColor(for: task.category))
+                    }
+                }
                 
                 Spacer()
                 
@@ -86,10 +104,13 @@ struct TaskRowView: View {
                 if task.priority > 0 {
                     Circle()
                         .fill(priorityColor(for: task.priority))
-                        .frame(width: 8, height: 8)
+                        .frame(width: 10, height: 10)
                 }
             }
+            .padding(.vertical, 4)
+            .contentShape(Rectangle())
         }
+        .buttonStyle(PlainButtonStyle())
     }
     
     func priorityColor(for priority: Int) -> Color {
@@ -98,6 +119,19 @@ struct TaskRowView: View {
         case 2: return .orange
         case 1: return .yellow
         default: return .clear
+        }
+    }
+    
+    func categoryColor(for category: String) -> Color {
+        switch category.lowercased() {
+        case "work": return .blue
+        case "personal": return .purple
+        case "shopping": return .green
+        case "health": return .pink
+        case "cloudo": return .blue
+        case "widget": return .orange
+        case "tips": return .green
+        default: return .gray
         }
     }
 }
@@ -110,13 +144,33 @@ struct CloudoWidgetEntryView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
-                Text("Today's Tasks")
-                    .font(.headline)
-                    .foregroundColor(.primary)
+                Label {
+                    Text("Today's Tasks")
+                        .font(.headline)
+                        .foregroundColor(.primary)
+                } icon: {
+                    Image(systemName: "list.bullet.circle.fill")
+                        .foregroundColor(.blue)
+                }
+                
                 Spacer()
-                Text("\(entry.tasks.filter { !$0.completed }.count) left")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
+                
+                if !entry.tasks.isEmpty {
+                    HStack(spacing: 4) {
+                        Text("\(entry.tasks.filter { !$0.completed }.count)")
+                            .font(.caption.bold())
+                            .foregroundColor(.primary)
+                        Text("left")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(
+                        Capsule()
+                            .fill(Color.blue.opacity(0.1))
+                    )
+                }
             }
             .padding(.bottom, 4)
             
@@ -133,21 +187,57 @@ struct CloudoWidgetEntryView: View {
             if let task = entry.tasks.first(where: { !$0.completed }) {
                 TaskRowView(task: task)
             } else {
-                Text("All done!")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
+                VStack(spacing: 4) {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.system(size: 20))
+                        .foregroundColor(.green)
+                    Text("All done!")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
             }
         case .systemMedium:
-            VStack(alignment: .leading, spacing: 8) {
-                ForEach(entry.tasks.prefix(3)) { task in
-                    TaskRowView(task: task)
+            if !entry.tasks.isEmpty {
+                VStack(alignment: .leading, spacing: 8) {
+                    ForEach(entry.tasks.prefix(3)) { task in
+                        TaskRowView(task: task)
+                    }
                 }
+            } else {
+                VStack(spacing: 8) {
+                    Image(systemName: "list.bullet.clipboard")
+                        .font(.system(size: 24))
+                        .foregroundColor(.secondary)
+                    Text("No tasks for today")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                    Text("Add tasks in the app")
+                        .font(.caption2)
+                        .foregroundColor(.tertiary)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         case .systemLarge:
-            VStack(alignment: .leading, spacing: 8) {
-                ForEach(entry.tasks.prefix(7)) { task in
-                    TaskRowView(task: task)
+            if !entry.tasks.isEmpty {
+                VStack(alignment: .leading, spacing: 8) {
+                    ForEach(entry.tasks.prefix(7)) { task in
+                        TaskRowView(task: task)
+                    }
                 }
+            } else {
+                VStack(spacing: 10) {
+                    Image(systemName: "list.bullet.clipboard")
+                        .font(.system(size: 30))
+                        .foregroundColor(.secondary)
+                    Text("No tasks for today")
+                        .font(.callout)
+                        .foregroundColor(.secondary)
+                    Text("Add tasks in the app to see them here")
+                        .font(.caption)
+                        .foregroundColor(.tertiary)
+                        .multilineTextAlignment(.center)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         @unknown default:
             Text("Unsupported widget size")
