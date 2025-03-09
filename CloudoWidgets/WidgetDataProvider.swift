@@ -2,6 +2,36 @@ import Foundation
 import CoreData
 import WidgetKit
 
+// Define a Task class for the widget to use
+@objc(Task)
+public class Task: NSManagedObject {
+    @NSManaged public var id: UUID?
+    @NSManaged public var title: String?
+    @NSManaged public var taskDescription: String?
+    @NSManaged public var completed: Bool
+    @NSManaged public var createdAt: Date?
+    @NSManaged public var reminderDate: Date?
+    @NSManaged public var priority: Int16
+    @NSManaged public var category: Category?
+    @NSManaged public var isRecurring: Bool
+    @NSManaged public var recurrenceType: Int16
+    @NSManaged public var lastCompletedDate: Date?
+}
+
+extension Task {
+    @nonobjc public class func fetchRequest() -> NSFetchRequest<Task> {
+        return NSFetchRequest<Task>(entityName: "Task")
+    }
+}
+
+@objc(Category)
+public class Category: NSManagedObject {
+    @NSManaged public var id: UUID?
+    @NSManaged public var name: String?
+    @NSManaged public var color: String?
+    @NSManaged public var tasks: NSSet?
+}
+
 class WidgetDataProvider {
     static let shared = WidgetDataProvider()
     
@@ -60,5 +90,19 @@ class WidgetDataProvider {
             print("Error fetching tasks: \(error)")
             return []
         }
+    }
+
+    func fetchTodaysTasks() -> [TaskViewModel] {
+        // For now, return sample tasks until we fix the Core Data access
+        return getSampleTasks()
+    }
+    
+    // Sample tasks for testing
+    private func getSampleTasks() -> [TaskViewModel] {
+        return [
+            TaskViewModel(id: UUID(), title: "Complete project proposal", priority: 3, completed: false, category: "Work", reminderDate: Date()),
+            TaskViewModel(id: UUID(), title: "Buy groceries", priority: 2, completed: false, category: "Personal", reminderDate: Date()),
+            TaskViewModel(id: UUID(), title: "Call mom", priority: 1, completed: true, category: "Personal", reminderDate: Date())
+        ]
     }
 } 

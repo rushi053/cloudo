@@ -2,7 +2,24 @@ import WidgetKit
 import SwiftUI
 import CoreData
 
-struct Provider: TimelineProvider {
+// Model for task data in the widget
+struct TaskViewModel: Identifiable {
+    let id: UUID
+    let title: String
+    let priority: Int
+    let completed: Bool
+    let category: String
+    let reminderDate: Date?
+}
+
+// Timeline entry for the widget
+struct TaskEntry: TimelineEntry {
+    let date: Date
+    let tasks: [TaskViewModel]
+}
+
+// Timeline provider for the widget
+struct CloudoWidgetProvider: TimelineProvider {
     func placeholder(in context: Context) -> TaskEntry {
         TaskEntry(date: Date(), tasks: [])
     }
@@ -48,22 +65,46 @@ struct Provider: TimelineProvider {
     }
 }
 
-struct TaskViewModel: Identifiable {
-    let id: UUID
-    let title: String
-    let priority: Int
-    let completed: Bool
-    let category: String
-    let reminderDate: Date?
+// Task row view for the widget
+struct TaskRowView: View {
+    var task: TaskViewModel
+    
+    var body: some View {
+        Link(destination: URL(string: "cloudo://complete-task/\(task.id)")!) {
+            HStack {
+                Image(systemName: task.completed ? "checkmark.circle.fill" : "circle")
+                    .foregroundColor(task.completed ? .green : .gray)
+                
+                Text(task.title)
+                    .lineLimit(1)
+                    .strikethrough(task.completed)
+                    .foregroundColor(task.completed ? .gray : .primary)
+                
+                Spacer()
+                
+                // Priority indicator
+                if task.priority > 0 {
+                    Circle()
+                        .fill(priorityColor(for: task.priority))
+                        .frame(width: 8, height: 8)
+                }
+            }
+        }
+    }
+    
+    func priorityColor(for priority: Int) -> Color {
+        switch priority {
+        case 3: return .red
+        case 2: return .orange
+        case 1: return .yellow
+        default: return .clear
+        }
+    }
 }
 
-struct TaskEntry: TimelineEntry {
-    let date: Date
-    let tasks: [TaskViewModel]
-}
-
-struct CloudoWidgetEntryView : View {
-    var entry: Provider.Entry
+// Widget entry view
+struct CloudoWidgetEntryView: View {
+    var entry: TaskEntry
     @Environment(\.widgetFamily) var family
     
     var body: some View {
@@ -114,47 +155,12 @@ struct CloudoWidgetEntryView : View {
     }
 }
 
-struct TaskRowView: View {
-    var task: TaskViewModel
-    
-    var body: some View {
-        Link(destination: URL(string: "cloudo://complete-task/\(task.id)")!) {
-            HStack {
-                Image(systemName: task.completed ? "checkmark.circle.fill" : "circle")
-                    .foregroundColor(task.completed ? .green : .gray)
-                
-                Text(task.title)
-                    .lineLimit(1)
-                    .strikethrough(task.completed)
-                    .foregroundColor(task.completed ? .gray : .primary)
-                
-                Spacer()
-                
-                // Priority indicator
-                if task.priority > 0 {
-                    Circle()
-                        .fill(priorityColor(for: task.priority))
-                        .frame(width: 8, height: 8)
-                }
-            }
-        }
-    }
-    
-    func priorityColor(for priority: Int) -> Color {
-        switch priority {
-        case 3: return .red
-        case 2: return .orange
-        case 1: return .yellow
-        default: return .clear
-        }
-    }
-}
-
+// Widget definition
 struct CloudoWidget: Widget {
     let kind: String = "CloudoWidget"
 
     var body: some WidgetConfiguration {
-        StaticConfiguration(kind: kind, provider: Provider()) { entry in
+        StaticConfiguration(kind: kind, provider: CloudoWidgetProvider()) { entry in
             CloudoWidgetEntryView(entry: entry)
         }
         .configurationDisplayName("Today's Tasks")
@@ -163,6 +169,7 @@ struct CloudoWidget: Widget {
     }
 }
 
+// Preview provider
 struct CloudoWidget_Previews: PreviewProvider {
     static var previews: some View {
         CloudoWidgetEntryView(entry: TaskEntry(date: Date(), tasks: [

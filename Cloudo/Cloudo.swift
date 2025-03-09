@@ -76,19 +76,22 @@ class URLHandler: ObservableObject {
     }
     
     private func completeTask(with id: UUID, context: NSManagedObjectContext) {
-        let fetchRequest: NSFetchRequest<Task> = Task.fetchRequest()
+        // Create the fetch request
+        let fetchRequest = NSFetchRequest<NSFetchRequestResult>(entityName: "Task")
         fetchRequest.predicate = NSPredicate(format: "id == %@", id as CVarArg)
         
         do {
-            let tasks = try context.fetch(fetchRequest)
-            if let task = tasks.first {
-                task.completed = true
+            // Execute the fetch request
+            if let results = try context.fetch(fetchRequest) as? [NSManagedObject], let task = results.first {
+                // Update the task
+                task.setValue(true, forKey: "completed")
                 
-                // Handle recurring tasks
-                if task.isRecurring {
-                    NotificationManager.shared.handleTaskCompletion(task: task)
+                // Handle recurring tasks if needed
+                if let isRecurring = task.value(forKey: "isRecurring") as? Bool, isRecurring {
+                    NotificationManager.shared.handleTaskCompletion(task: task as! Task)
                 }
                 
+                // Save the context
                 try context.save()
                 lastCompletedTaskId = id
                 
