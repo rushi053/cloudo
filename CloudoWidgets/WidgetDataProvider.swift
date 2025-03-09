@@ -2,36 +2,6 @@ import Foundation
 import CoreData
 import WidgetKit
 
-// Define a Task class for the widget to use
-@objc(Task)
-public class Task: NSManagedObject {
-    @NSManaged public var id: UUID?
-    @NSManaged public var title: String?
-    @NSManaged public var taskDescription: String?
-    @NSManaged public var completed: Bool
-    @NSManaged public var createdAt: Date?
-    @NSManaged public var reminderDate: Date?
-    @NSManaged public var priority: Int16
-    @NSManaged public var category: Category?
-    @NSManaged public var isRecurring: Bool
-    @NSManaged public var recurrenceType: Int16
-    @NSManaged public var lastCompletedDate: Date?
-}
-
-extension Task {
-    @nonobjc public class func fetchRequest() -> NSFetchRequest<Task> {
-        return NSFetchRequest<Task>(entityName: "Task")
-    }
-}
-
-@objc(Category)
-public class Category: NSManagedObject {
-    @NSManaged public var id: UUID?
-    @NSManaged public var name: String?
-    @NSManaged public var color: String?
-    @NSManaged public var tasks: NSSet?
-}
-
 class WidgetDataProvider {
     static let shared = WidgetDataProvider()
     static let appGroupIdentifier = "group.com.rushi.Cloudo"
@@ -63,7 +33,7 @@ class WidgetDataProvider {
         // Try to fetch from Core Data first
         do {
             let context = persistentContainer.viewContext
-            let fetchRequest: NSFetchRequest<Task> = Task.fetchRequest()
+            let fetchRequest = NSFetchRequest<NSManagedObject>(entityName: "Task")
             
             // Get today's date range
             let calendar = Calendar.current
@@ -86,12 +56,12 @@ class WidgetDataProvider {
             if !tasks.isEmpty {
                 return tasks.map { task in
                     TaskViewModel(
-                        id: task.id ?? UUID(),
-                        title: task.title ?? "Untitled Task",
-                        priority: Int(task.priority),
-                        completed: task.completed,
-                        category: task.category?.name ?? "",
-                        reminderDate: task.reminderDate
+                        id: task.value(forKey: "id") as? UUID ?? UUID(),
+                        title: task.value(forKey: "title") as? String ?? "Untitled Task",
+                        priority: Int(task.value(forKey: "priority") as? Int16 ?? 0),
+                        completed: task.value(forKey: "completed") as? Bool ?? false,
+                        category: (task.value(forKey: "category") as? NSManagedObject)?.value(forKey: "name") as? String ?? "",
+                        reminderDate: task.value(forKey: "reminderDate") as? Date
                     )
                 }
             } else {
