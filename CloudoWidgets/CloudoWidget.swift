@@ -68,24 +68,25 @@ struct CloudoWidgetProvider: TimelineProvider {
 // Task row view for the widget
 struct TaskRowView: View {
     var task: TaskViewModel
+    var isCompact: Bool = false
     
     var body: some View {
         Link(destination: URL(string: "cloudo://complete-task/\(task.id)")!) {
-            HStack(spacing: 12) {
+            HStack(spacing: isCompact ? 8 : 12) {
                 // Checkbox
                 Image(systemName: task.completed ? "checkmark.circle.fill" : "circle")
-                    .font(.system(size: 18))
+                    .font(.system(size: isCompact ? 16 : 18))
                     .foregroundColor(task.completed ? .green : .gray)
                 
                 // Task title with category pill
-                VStack(alignment: .leading, spacing: 2) {
+                VStack(alignment: .leading, spacing: isCompact ? 1 : 2) {
                     Text(task.title)
-                        .font(.system(size: 14, weight: task.priority == 3 ? .medium : .regular))
+                        .font(.system(size: isCompact ? 12 : 14, weight: task.priority == 3 ? .medium : .regular))
                         .lineLimit(1)
                         .strikethrough(task.completed)
                         .foregroundColor(task.completed ? .gray : .primary)
                     
-                    if !task.category.isEmpty {
+                    if !task.category.isEmpty && !isCompact {
                         Text(task.category)
                             .font(.system(size: 10))
                             .padding(.horizontal, 6)
@@ -104,10 +105,10 @@ struct TaskRowView: View {
                 if task.priority > 0 {
                     Circle()
                         .fill(priorityColor(for: task.priority))
-                        .frame(width: 10, height: 10)
+                        .frame(width: isCompact ? 8 : 10, height: isCompact ? 8 : 10)
                 }
             }
-            .padding(.vertical, 4)
+            .padding(.vertical, isCompact ? 2 : 4)
             .contentShape(Rectangle())
         }
         .buttonStyle(PlainButtonStyle())
@@ -115,22 +116,22 @@ struct TaskRowView: View {
     
     func priorityColor(for priority: Int) -> Color {
         switch priority {
-        case 3: return .red
-        case 2: return .orange
-        case 1: return .yellow
+        case 3: return WidgetTheme.highPriority
+        case 2: return WidgetTheme.mediumPriority
+        case 1: return WidgetTheme.lowPriority
         default: return .clear
         }
     }
     
     func categoryColor(for category: String) -> Color {
         switch category.lowercased() {
-        case "work": return .blue
-        case "personal": return .purple
-        case "shopping": return .green
-        case "health": return .pink
-        case "cloudo": return .blue
-        case "widget": return .orange
-        case "tips": return .green
+        case "work": return WidgetTheme.workColor
+        case "personal": return WidgetTheme.personalColor
+        case "shopping": return WidgetTheme.shoppingColor
+        case "health": return WidgetTheme.healthColor
+        case "cloudo": return WidgetTheme.primaryPastel
+        case "widget": return WidgetTheme.mediumPriority
+        case "tips": return WidgetTheme.lowPriority
         default: return .gray
         }
     }
@@ -150,7 +151,7 @@ struct CloudoWidgetEntryView: View {
                         .foregroundColor(.primary)
                 } icon: {
                     Image(systemName: "list.bullet.circle.fill")
-                        .foregroundColor(.blue)
+                        .foregroundColor(WidgetTheme.primaryPastel)
                 }
                 
                 Spacer()
@@ -168,15 +169,15 @@ struct CloudoWidgetEntryView: View {
                     .padding(.vertical, 4)
                     .background(
                         Capsule()
-                            .fill(Color.blue.opacity(0.1))
+                            .fill(WidgetTheme.primaryPastel.opacity(0.15))
                     )
                 }
             }
-            .padding(.bottom, 4)
+            .padding(.bottom, family == .systemSmall ? 2 : 4)
             
             taskList
         }
-        .padding()
+        .padding(family == .systemSmall ? 12 : 16)
         .containerBackground(.background, for: .widget)
     }
     
@@ -185,7 +186,8 @@ struct CloudoWidgetEntryView: View {
         switch family {
         case .systemSmall:
             if let task = entry.tasks.first(where: { !$0.completed }) {
-                TaskRowView(task: task)
+                TaskRowView(task: task, isCompact: true)
+                    .padding(.vertical, 4)
             } else {
                 VStack(spacing: 4) {
                     Image(systemName: "checkmark.circle.fill")
@@ -195,12 +197,27 @@ struct CloudoWidgetEntryView: View {
                         .font(.caption)
                         .foregroundColor(.secondary)
                 }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         case .systemMedium:
             if !entry.tasks.isEmpty {
-                VStack(alignment: .leading, spacing: 8) {
-                    ForEach(entry.tasks.prefix(3)) { task in
+                let incompleteTasks = entry.tasks.filter { !$0.completed }
+                let tasksToShow = incompleteTasks.isEmpty ? entry.tasks : incompleteTasks
+                
+                VStack(alignment: .leading, spacing: 4) {
+                    ForEach(tasksToShow.prefix(2)) { task in
                         TaskRowView(task: task)
+                            .padding(.vertical, 2)
+                    }
+                    
+                    if tasksToShow.count > 2 {
+                        HStack {
+                            Text("+ \(tasksToShow.count - 2) more")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                            Spacer()
+                        }
+                        .padding(.top, 4)
                     }
                 }
             } else {
@@ -219,9 +236,23 @@ struct CloudoWidgetEntryView: View {
             }
         case .systemLarge:
             if !entry.tasks.isEmpty {
-                VStack(alignment: .leading, spacing: 8) {
-                    ForEach(entry.tasks.prefix(7)) { task in
+                let incompleteTasks = entry.tasks.filter { !$0.completed }
+                let tasksToShow = incompleteTasks.isEmpty ? entry.tasks : incompleteTasks
+                
+                VStack(alignment: .leading, spacing: 6) {
+                    ForEach(tasksToShow.prefix(5)) { task in
                         TaskRowView(task: task)
+                            .padding(.vertical, 2)
+                    }
+                    
+                    if tasksToShow.count > 5 {
+                        HStack {
+                            Text("+ \(tasksToShow.count - 5) more")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                            Spacer()
+                        }
+                        .padding(.top, 4)
                     }
                 }
             } else {
