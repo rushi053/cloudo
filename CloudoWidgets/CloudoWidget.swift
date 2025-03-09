@@ -213,7 +213,7 @@ struct CloudoWidgetEntryView: View {
                         .foregroundColor(.secondary)
                     Text("Add tasks in the app")
                         .font(.caption2)
-                        .foregroundColor(.tertiary)
+                        .foregroundColor(.secondary.opacity(0.7))
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
@@ -234,7 +234,7 @@ struct CloudoWidgetEntryView: View {
                         .foregroundColor(.secondary)
                     Text("Add tasks in the app to see them here")
                         .font(.caption)
-                        .foregroundColor(.tertiary)
+                        .foregroundColor(.secondary.opacity(0.7))
                         .multilineTextAlignment(.center)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
