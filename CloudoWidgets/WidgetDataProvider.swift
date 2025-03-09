@@ -34,6 +34,7 @@ public class Category: NSManagedObject {
 
 class WidgetDataProvider {
     static let shared = WidgetDataProvider()
+    static let appGroupIdentifier = "group.com.rushi.Cloudo"
     
     private init() {}
     
@@ -41,8 +42,11 @@ class WidgetDataProvider {
         let container = NSPersistentContainer(name: "Cloudo")
         
         // Use the shared App Group container
-        if let storeURL = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: "group.com.rushi.Cloudo") {
+        if let storeURL = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: WidgetDataProvider.appGroupIdentifier) {
             let storeDescription = NSPersistentStoreDescription(url: storeURL.appendingPathComponent("Cloudo.sqlite"))
+            
+            // Enable history tracking for better performance
+            storeDescription.setOption(true as NSNumber, forKey: NSPersistentHistoryTrackingKey)
             container.persistentStoreDescriptions = [storeDescription]
         }
         
@@ -56,45 +60,50 @@ class WidgetDataProvider {
     }()
     
     func fetchTodaysTasks() -> [TaskViewModel] {
-        let context = persistentContainer.viewContext
-        let fetchRequest: NSFetchRequest<Task> = Task.fetchRequest()
-        
-        // Get today's date range
-        let calendar = Calendar.current
-        let today = calendar.startOfDay(for: Date())
-        let tomorrow = calendar.date(byAdding: .day, value: 1, to: today)!
-        
-        // Fetch tasks that are due today or have no due date and are not completed
-        let predicate = NSPredicate(format: "(reminderDate >= %@ AND reminderDate < %@) OR (reminderDate == nil AND completed == NO)", today as NSDate, tomorrow as NSDate)
-        fetchRequest.predicate = predicate
-        
-        // Sort by priority (high to low) and then by title
-        fetchRequest.sortDescriptors = [
-            NSSortDescriptor(key: "priority", ascending: false),
-            NSSortDescriptor(key: "title", ascending: true)
-        ]
-        
+        // Try to fetch from Core Data first
         do {
+            let context = persistentContainer.viewContext
+            let fetchRequest: NSFetchRequest<Task> = Task.fetchRequest()
+            
+            // Get today's date range
+            let calendar = Calendar.current
+            let today = calendar.startOfDay(for: Date())
+            let tomorrow = calendar.date(byAdding: .day, value: 1, to: today)!
+            
+            // Fetch tasks that are due today or have no due date and are not completed
+            let predicate = NSPredicate(format: "(reminderDate >= %@ AND reminderDate < %@) OR (reminderDate == nil AND completed == NO)", today as NSDate, tomorrow as NSDate)
+            fetchRequest.predicate = predicate
+            
+            // Sort by priority (high to low) and then by title
+            fetchRequest.sortDescriptors = [
+                NSSortDescriptor(key: "priority", ascending: false),
+                NSSortDescriptor(key: "title", ascending: true)
+            ]
+            
             let tasks = try context.fetch(fetchRequest)
-            return tasks.map { task in
-                TaskViewModel(
-                    id: task.id ?? UUID(),
-                    title: task.title ?? "Untitled Task",
-                    priority: Int(task.priority),
-                    completed: task.completed,
-                    category: task.category?.name ?? "",
-                    reminderDate: task.reminderDate
-                )
+            
+            // If we successfully fetched tasks, return them
+            if !tasks.isEmpty {
+                return tasks.map { task in
+                    TaskViewModel(
+                        id: task.id ?? UUID(),
+                        title: task.title ?? "Untitled Task",
+                        priority: Int(task.priority),
+                        completed: task.completed,
+                        category: task.category?.name ?? "",
+                        reminderDate: task.reminderDate
+                    )
+                }
+            } else {
+                // If no tasks were found, return sample tasks
+                print("No tasks found in Core Data, using sample tasks")
+                return getSampleTasks()
             }
         } catch {
-            print("Error fetching tasks: \(error)")
-            return []
+            // If there was an error, log it and return sample tasks
+            print("Error fetching tasks from Core Data: \(error)")
+            return getSampleTasks()
         }
-    }
-
-    func fetchTodaysTasks() -> [TaskViewModel] {
-        // For now, return sample tasks until we fix the Core Data access
-        return getSampleTasks()
     }
     
     // Sample tasks for testing

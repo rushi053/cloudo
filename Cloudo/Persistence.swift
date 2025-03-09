@@ -1,7 +1,9 @@
 import CoreData
+import WidgetKit
 
 struct PersistenceController {
     static let shared = PersistenceController()
+    static let appGroupIdentifier = "group.com.rushi.Cloudo"
 
     let container: NSPersistentContainer
 
@@ -9,8 +11,13 @@ struct PersistenceController {
         container = NSPersistentContainer(name: "Cloudo")
         
         // Set up shared container for App Group to enable widget access
-        if let storeURL = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: "group.com.rushi.Cloudo") {
+        if let storeURL = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: PersistenceController.appGroupIdentifier) {
             let storeDescription = NSPersistentStoreDescription(url: storeURL.appendingPathComponent("Cloudo.sqlite"))
+            
+            // Enable history tracking for widgets
+            storeDescription.setOption(true as NSNumber, forKey: NSPersistentHistoryTrackingKey)
+            storeDescription.setOption(true as NSNumber, forKey: NSPersistentStoreRemoteChangeNotificationPostOptionKey)
+            
             container.persistentStoreDescriptions = [storeDescription]
         }
         
@@ -20,21 +27,20 @@ struct PersistenceController {
         
         container.loadPersistentStores(completionHandler: { (storeDescription, error) in
             if let error = error as NSError? {
-                // Replace this implementation with code to handle the error appropriately.
-                // fatalError() causes the application to generate a crash log and terminate. You should not use this function in a shipping application, although it may be useful during development.
-
-                /*
-                 Typical reasons for an error here include:
-                 * The parent directory does not exist, cannot be created, or disallows writing.
-                 * The persistent store is not accessible, due to permissions or data protection when the device is locked.
-                 * The device is out of space.
-                 * The store could not be migrated to the current model version.
-                 Check the error message to determine what the actual problem was.
-                 */
-                fatalError("Unresolved error \(error), \(error.userInfo)")
+                // In a production app, you might want to handle this more gracefully
+                print("Persistent store loading error: \(error), \(error.userInfo)")
             }
         })
+        
+        // Configure the view context for better performance and automatic merging
         container.viewContext.automaticallyMergesChangesFromParent = true
+        container.viewContext.mergePolicy = NSMergeByPropertyObjectTrumpMergePolicy
+        
+        // Set up to refresh widgets when data changes
+        NotificationCenter.default.addObserver(forName: .NSPersistentStoreRemoteChange, object: nil, queue: .main) { _ in
+            // Refresh widgets when Core Data changes
+            WidgetCenter.shared.reloadAllTimelines()
+        }
     }
     
     static var preview: PersistenceController = {
