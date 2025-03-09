@@ -31,15 +31,37 @@ class WidgetDataProvider {
     
     func fetchTodaysTasks() -> [TaskViewModel] {
         // Try to fetch from UserDefaults first
-        if let sharedDefaults = userDefaults,
-           let tasksData = sharedDefaults.data(forKey: "widgetTasks"),
-           let tasks = try? JSONDecoder().decode([TaskViewModel].self, from: tasksData),
-           !tasks.isEmpty {
-            return tasks
+        if let sharedDefaults = userDefaults {
+            print("Found shared UserDefaults with identifier: \(WidgetDataProvider.appGroupIdentifier)")
+            
+            if let tasksData = sharedDefaults.data(forKey: "widgetTasks") {
+                print("Found tasks data in UserDefaults")
+                
+                do {
+                    let tasks = try JSONDecoder().decode([TaskViewModel].self, from: tasksData)
+                    if !tasks.isEmpty {
+                        print("Successfully decoded \(tasks.count) tasks from UserDefaults")
+                        return tasks
+                    } else {
+                        print("Decoded tasks array is empty")
+                    }
+                } catch {
+                    print("Error decoding tasks from UserDefaults: \(error)")
+                }
+            } else {
+                print("No tasks data found in UserDefaults with key 'widgetTasks'")
+                
+                // Debug: print all keys in UserDefaults
+                for key in sharedDefaults.dictionaryRepresentation().keys {
+                    print("UserDefaults key: \(key)")
+                }
+            }
+        } else {
+            print("Failed to access shared UserDefaults with identifier: \(WidgetDataProvider.appGroupIdentifier)")
         }
         
         // If no tasks were found, return sample tasks
-        print("No tasks found in UserDefaults, using sample tasks")
+        print("Using sample tasks instead")
         return getSampleTasks()
     }
     

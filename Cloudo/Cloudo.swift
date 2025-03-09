@@ -43,6 +43,12 @@ struct CloudoApp: App {
         UINavigationBar.appearance().standardAppearance = appearance
         UINavigationBar.appearance().compactAppearance = appearance
         UINavigationBar.appearance().scrollEdgeAppearance = appearance
+        
+        // Save tasks for widget on app launch
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+            PersistenceController.shared.saveTasksForWidget()
+            print("Saved tasks for widget on app launch")
+        }
     }
     
     var body: some Scene {
@@ -53,6 +59,11 @@ struct CloudoApp: App {
                 .environmentObject(urlHandler)
                 .onOpenURL { url in
                     urlHandler.handleURL(url, context: persistenceController.container.viewContext)
+                }
+                .onReceive(NotificationCenter.default.publisher(for: .NSManagedObjectContextDidSave)) { _ in
+                    // Update widget data when Core Data changes
+                    PersistenceController.shared.saveTasksForWidget()
+                    print("Updated widget data due to Core Data changes")
                 }
         }
     }
