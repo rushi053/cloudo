@@ -503,6 +503,9 @@ struct AddTaskView: View {
         do {
             try viewContext.save()
             
+            // Save tasks to UserDefaults for widget access
+            PersistenceController.shared.saveTasksForWidget()
+            
             // Schedule notification if needed
             if reminderDate != nil {
                 // Request notification permissions if this is a task with a reminder

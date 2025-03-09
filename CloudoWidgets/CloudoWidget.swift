@@ -3,7 +3,7 @@ import SwiftUI
 import CoreData
 
 // Model for task data in the widget
-struct TaskViewModel: Identifiable {
+struct TaskViewModel: Identifiable, Codable {
     let id: UUID
     let title: String
     let priority: Int
@@ -123,7 +123,7 @@ struct CloudoWidgetEntryView: View {
             taskList
         }
         .padding()
-        .background(Color(UIColor.systemBackground))
+        .containerBackground(.background, for: .widget)
     }
     
     @ViewBuilder

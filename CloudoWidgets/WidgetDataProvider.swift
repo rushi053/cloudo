@@ -30,50 +30,22 @@ class WidgetDataProvider {
     }()
     
     func fetchTodaysTasks() -> [TaskViewModel] {
-        // Try to fetch from Core Data first
-        do {
-            let context = persistentContainer.viewContext
-            let fetchRequest = NSFetchRequest<NSManagedObject>(entityName: "Task")
-            
-            // Get today's date range
-            let calendar = Calendar.current
-            let today = calendar.startOfDay(for: Date())
-            let tomorrow = calendar.date(byAdding: .day, value: 1, to: today)!
-            
-            // Fetch tasks that are due today or have no due date and are not completed
-            let predicate = NSPredicate(format: "(reminderDate >= %@ AND reminderDate < %@) OR (reminderDate == nil AND completed == NO)", today as NSDate, tomorrow as NSDate)
-            fetchRequest.predicate = predicate
-            
-            // Sort by priority (high to low) and then by title
-            fetchRequest.sortDescriptors = [
-                NSSortDescriptor(key: "priority", ascending: false),
-                NSSortDescriptor(key: "title", ascending: true)
-            ]
-            
-            let tasks = try context.fetch(fetchRequest)
-            
-            // If we successfully fetched tasks, return them
-            if !tasks.isEmpty {
-                return tasks.map { task in
-                    TaskViewModel(
-                        id: task.value(forKey: "id") as? UUID ?? UUID(),
-                        title: task.value(forKey: "title") as? String ?? "Untitled Task",
-                        priority: Int(task.value(forKey: "priority") as? Int16 ?? 0),
-                        completed: task.value(forKey: "completed") as? Bool ?? false,
-                        category: (task.value(forKey: "category") as? NSManagedObject)?.value(forKey: "name") as? String ?? "",
-                        reminderDate: task.value(forKey: "reminderDate") as? Date
-                    )
-                }
-            } else {
-                // If no tasks were found, return sample tasks
-                print("No tasks found in Core Data, using sample tasks")
-                return getSampleTasks()
-            }
-        } catch {
-            // If there was an error, log it and return sample tasks
-            print("Error fetching tasks from Core Data: \(error)")
-            return getSampleTasks()
+        // Try to fetch from UserDefaults first
+        if let sharedDefaults = userDefaults,
+           let tasksData = sharedDefaults.data(forKey: "widgetTasks"),
+           let tasks = try? JSONDecoder().decode([TaskViewModel].self, from: tasksData),
+           !tasks.isEmpty {
+            return tasks
         }
+        
+        // If no tasks were found, return sample tasks
+        print("No tasks found in UserDefaults, using sample tasks")
+        return getSampleTasks()
+    }
+    
+    // Use UserDefaults with App Group to share data between app and widget
+    private var userDefaults: UserDefaults? {
+        return UserDefaults(suiteName: WidgetDataProvider.appGroupIdentifier)
     }
     
     // Sample tasks for testing

@@ -798,6 +798,9 @@ struct EditTaskView: View {
         do {
             try viewContext.save()
             
+            // Save tasks to UserDefaults for widget access
+            PersistenceController.shared.saveTasksForWidget()
+            
             // Handle notifications
             if reminderDate != nil && !task.completed {
                 // Request notification permissions if adding a reminder
