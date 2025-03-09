@@ -799,7 +799,7 @@ struct EditTaskView: View {
             try viewContext.save()
             
             // Handle notifications
-            if let reminderDate = reminderDate, !task.completed {
+            if reminderDate != nil && !task.completed {
                 // Request notification permissions if adding a reminder
                 NotificationManager.shared.requestAuthorization { granted in
                     if granted {

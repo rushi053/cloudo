@@ -504,7 +504,7 @@ struct AddTaskView: View {
             try viewContext.save()
             
             // Schedule notification if needed
-            if let reminderDate = reminderDate {
+            if reminderDate != nil {
                 // Request notification permissions if this is a task with a reminder
                 NotificationManager.shared.requestAuthorization { granted in
                     if granted {
