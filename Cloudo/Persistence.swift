@@ -116,54 +116,6 @@ struct PersistenceController {
         do {
             let tasks = try context.fetch(fetchRequest)
             
-            // Convert tasks to TaskViewModel
-            let taskViewModels = tasks.map { task -> [String: Any] in
-                return [
-                    "id": task.id?.uuidString ?? UUID().uuidString,
-                    "title": task.title ?? "Untitled Task",
-                    "priority": task.priority,
-                    "completed": task.completed,
-                    "category": task.category?.name ?? "",
-                    "reminderDate": task.reminderDate as Any
-                ]
-            }
-            
-            // Save to UserDefaults
-            if let sharedDefaults = UserDefaults(suiteName: PersistenceController.appGroupIdentifier) {
-                sharedDefaults.set(taskViewModels, forKey: "widgetTasks")
-                sharedDefaults.synchronize()
-            }
-            
-            // Refresh widgets
-            WidgetCenter.shared.reloadAllTimelines()
-        } catch {
-            print("Error saving tasks for widget: \(error)")
-        }
-    }
-
-    // Save tasks to UserDefaults for widget access
-    func saveTasksForWidget() {
-        let context = container.viewContext
-        let fetchRequest: NSFetchRequest<Task> = Task.fetchRequest()
-        
-        // Get today's date range
-        let calendar = Calendar.current
-        let today = calendar.startOfDay(for: Date())
-        let tomorrow = calendar.date(byAdding: .day, value: 1, to: today)!
-        
-        // Fetch tasks that are due today or have no due date and are not completed
-        let predicate = NSPredicate(format: "(reminderDate >= %@ AND reminderDate < %@) OR (reminderDate == nil AND completed == NO)", today as NSDate, tomorrow as NSDate)
-        fetchRequest.predicate = predicate
-        
-        // Sort by priority (high to low) and then by title
-        fetchRequest.sortDescriptors = [
-            NSSortDescriptor(key: "priority", ascending: false),
-            NSSortDescriptor(key: "title", ascending: true)
-        ]
-        
-        do {
-            let tasks = try context.fetch(fetchRequest)
-            
             // Convert tasks to TaskViewModel objects
             let taskViewModels = tasks.map { task -> TaskViewModel in
                 return TaskViewModel(

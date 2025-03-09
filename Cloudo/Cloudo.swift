@@ -44,6 +44,24 @@ struct CloudoApp: App {
         UINavigationBar.appearance().compactAppearance = appearance
         UINavigationBar.appearance().scrollEdgeAppearance = appearance
         
+        // Test App Group access
+        if let containerURL = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: PersistenceController.appGroupIdentifier) {
+            print("Successfully accessed App Group container at: \(containerURL)")
+            
+            // Test UserDefaults access
+            let sharedDefaults = UserDefaults(suiteName: PersistenceController.appGroupIdentifier)
+            sharedDefaults?.set("test_value", forKey: "test_key")
+            sharedDefaults?.synchronize()
+            
+            if let testValue = sharedDefaults?.string(forKey: "test_key"), testValue == "test_value" {
+                print("Successfully wrote and read from shared UserDefaults")
+            } else {
+                print("Failed to write/read from shared UserDefaults")
+            }
+        } else {
+            print("Failed to access App Group container. Check entitlements and provisioning profile.")
+        }
+        
         // Save tasks for widget on app launch
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
             PersistenceController.shared.saveTasksForWidget()

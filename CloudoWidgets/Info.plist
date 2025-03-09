@@ -11,5 +11,18 @@
 	<array>
 		<string>group.com.rushi.Cloudo</string>
 	</array>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLName</key>
+			<string>com.rushi.Cloudo</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>cloudo</string>
+			</array>
+		</dict>
+	</array>
 </dict>
 </plist>
