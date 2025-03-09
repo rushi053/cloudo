@@ -1,5 +1,6 @@
 import Foundation
 import UserNotifications
+import WidgetKit
 
 class NotificationManager {
     static let shared = NotificationManager()
@@ -85,6 +86,18 @@ class NotificationManager {
                 scheduleNotification(for: task)
             }
         }
+    }
+    
+    // Handle task completion by taskId (for widget interactions)
+    func handleTaskCompletion(taskId: UUID) {
+        // Cancel the current notification
+        UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: [taskId.uuidString])
+        
+        // Note: For widget interactions, we can't reschedule recurring tasks here
+        // This will be handled when the app syncs with Core Data
+        
+        // Refresh widgets
+        WidgetCenter.shared.reloadAllTimelines()
     }
     
     // Get all pending notifications

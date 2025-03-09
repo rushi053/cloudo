@@ -8,6 +8,7 @@
 import SwiftUI
 import UIKit
 import WidgetKit
+import CoreData
 
 @main
 struct CloudoApp: App {
@@ -88,7 +89,10 @@ class URLHandler: ObservableObject {
                 
                 // Handle recurring tasks if needed
                 if let isRecurring = task.value(forKey: "isRecurring") as? Bool, isRecurring {
-                    NotificationManager.shared.handleTaskCompletion(task: task as! Task)
+                    // Use the NotificationManager without casting to Task
+                    if let taskId = task.value(forKey: "id") as? UUID {
+                        NotificationManager.shared.handleTaskCompletion(taskId: taskId)
+                    }
                 }
                 
                 // Save the context
