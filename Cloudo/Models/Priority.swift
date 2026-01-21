@@ -7,17 +7,15 @@
 
 import SwiftUI
 
-enum Priority: Int16, CaseIterable, Identifiable {
-    case none = 0
-    case low = 1
-    case medium = 2
-    case high = 3
+enum Priority: String, CaseIterable, Identifiable {
+    case low = "low"
+    case medium = "medium"
+    case high = "high"
     
-    var id: Int16 { rawValue }
+    var id: String { rawValue }
     
-    var name: String {
+    var displayName: String {
         switch self {
-        case .none: return "None"
         case .low: return "Low"
         case .medium: return "Medium"
         case .high: return "High"
@@ -26,7 +24,6 @@ enum Priority: Int16, CaseIterable, Identifiable {
     
     var icon: String {
         switch self {
-        case .none: return "minus"
         case .low: return "flag"
         case .medium: return "flag.fill"
         case .high: return "exclamationmark.triangle.fill"
@@ -35,15 +32,18 @@ enum Priority: Int16, CaseIterable, Identifiable {
     
     var color: Color {
         switch self {
-        case .none: return Color(.systemGray4)
-        case .low: return CloudoTheme.priorityLow
-        case .medium: return CloudoTheme.priorityMedium
-        case .high: return CloudoTheme.priorityHigh
+        case .low: return CloudoTheme.lime
+        case .medium: return CloudoTheme.peach
+        case .high: return CloudoTheme.salmon
         }
     }
     
-    /// Fallback colors - now the same as main colors
-    var fallbackColor: Color {
-        color
+    /// Sort order (higher value = higher priority)
+    var sortOrder: Int {
+        switch self {
+        case .low: return 1
+        case .medium: return 2
+        case .high: return 3
+        }
     }
 }

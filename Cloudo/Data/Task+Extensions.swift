@@ -14,12 +14,14 @@ extension Task {
     
     /// Priority enum value
     var priorityValue: Priority {
-        Priority(rawValue: priority) ?? .none
+        guard let priorityString = priority else { return .medium }
+        return Priority(rawValue: priorityString) ?? .medium
     }
     
     /// Recurrence enum value
     var recurrenceValue: Recurrence {
-        Recurrence(rawValue: recurrenceType) ?? .none
+        guard let recurrenceString = recurrence else { return .none }
+        return Recurrence(rawValue: recurrenceString) ?? .none
     }
     
     /// Whether the task is overdue
@@ -88,7 +90,7 @@ extension Task {
         let request: NSFetchRequest<Task> = Task.fetchRequest()
         request.predicate = NSPredicate(format: "isCompleted == NO")
         request.sortDescriptors = [
-            NSSortDescriptor(keyPath: \Task.priority, ascending: false),
+            NSSortDescriptor(keyPath: \Task.reminderDate, ascending: true),
             NSSortDescriptor(keyPath: \Task.createdAt, ascending: false)
         ]
         return request
@@ -152,8 +154,8 @@ extension Task {
     static func create(
         in context: NSManagedObjectContext,
         title: String,
-        description: String? = nil,
-        priority: Priority = .none,
+        notes: String? = nil,
+        priority: Priority = .medium,
         category: Category? = nil,
         reminderDate: Date? = nil,
         recurrence: Recurrence = .none
@@ -161,12 +163,11 @@ extension Task {
         let task = Task(context: context)
         task.id = UUID()
         task.title = title
-        task.taskDescription = description
+        task.notes = notes
         task.priority = priority.rawValue
         task.category = category
         task.reminderDate = reminderDate
-        task.recurrenceType = recurrence.rawValue
-        task.isRecurring = recurrence != .none
+        task.recurrence = recurrence.rawValue
         task.isCompleted = false
         task.createdAt = Date()
         return task

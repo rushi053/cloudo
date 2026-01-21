@@ -2,29 +2,29 @@
 //  RootView.swift
 //  Cloudo
 //
-//  Root view that handles navigation between onboarding and main app
+//  Root view handling onboarding and main app flow
 //
 
 import SwiftUI
 
 struct RootView: View {
-    @EnvironmentObject private var appState: AppState
+    @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
     
     var body: some View {
         Group {
-            if appState.hasCompletedOnboarding {
+            if hasCompletedOnboarding {
                 MainTabView()
                     .transition(.opacity)
             } else {
-                OnboardingView()
+                OnboardingView(hasCompletedOnboarding: $hasCompletedOnboarding)
                     .transition(.opacity)
             }
         }
-        .animation(.easeInOut(duration: 0.3), value: appState.hasCompletedOnboarding)
+        .animation(Design.Animation.smooth, value: hasCompletedOnboarding)
     }
 }
 
 #Preview {
     RootView()
-        .environmentObject(AppState())
+        .environment(\.managedObjectContext, PersistenceController.preview.container.viewContext)
 }

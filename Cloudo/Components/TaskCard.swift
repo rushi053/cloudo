@@ -2,331 +2,293 @@
 //  TaskCard.swift
 //  Cloudo
 //
-//  Beautiful, modern task card with delightful interactions
+//  Large colorful task card inspired by Behance mockups
 //
 
 import SwiftUI
+import CoreData
 
 struct TaskCard: View {
-    
-    // MARK: - Properties
-    
-    @ObservedObject var task: Task
-    @Environment(\.managedObjectContext) private var viewContext
-    @EnvironmentObject private var appState: AppState
-    
+    let task: Task
+    let cardColor: Color
+    let onToggle: () -> Void
     let onTap: () -> Void
-    let onComplete: () -> Void
     
     @State private var isPressed = false
-    @State private var showCompletionAnimation = false
-    @State private var checkScale: CGFloat = 1.0
     
-    // MARK: - Body
+    private var textColor: Color {
+        cardColor.isLight ? CloudoTheme.textOnColor : .white
+    }
+    
+    private var secondaryTextColor: Color {
+        cardColor.isLight ? CloudoTheme.textSecondary : .white.opacity(0.8)
+    }
+    
+    var body: some View {
+        Button(action: onTap) {
+            VStack(alignment: .leading, spacing: Design.Spacing.sm) {
+                // Top row: Category & completion status
+                HStack {
+                    if let category = task.category, let name = category.name {
+                        Text(name)
+                            .font(Design.Typography.caption)
+                            .foregroundColor(secondaryTextColor)
+                    }
+                    
+                    Spacer()
+                    
+                    // Completion checkbox
+                    Button(action: onToggle) {
+                        ZStack {
+                            Circle()
+                                .stroke(textColor.opacity(0.3), lineWidth: 2)
+                                .frame(width: 28, height: 28)
+                            
+                            if task.isCompleted {
+                                Circle()
+                                    .fill(textColor)
+                                    .frame(width: 28, height: 28)
+                                
+                                Image(systemName: "checkmark")
+                                    .font(.system(size: 14, weight: .bold))
+                                    .foregroundColor(cardColor)
+                            }
+                        }
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                }
+                
+                Spacer(minLength: Design.Spacing.sm)
+                
+                // Task title - Large and bold
+                Text(task.title ?? "Untitled")
+                    .font(Design.Typography.title2)
+                    .fontWeight(.bold)
+                    .foregroundColor(textColor)
+                    .strikethrough(task.isCompleted, color: textColor.opacity(0.5))
+                    .lineLimit(2)
+                    .multilineTextAlignment(.leading)
+                
+                // Task notes preview
+                if let notes = task.notes, !notes.isEmpty {
+                    Text(notes)
+                        .font(Design.Typography.subheadline)
+                        .foregroundColor(secondaryTextColor)
+                        .lineLimit(2)
+                        .multilineTextAlignment(.leading)
+                }
+                
+                Spacer(minLength: Design.Spacing.xs)
+                
+                // Bottom row: Date/time info & action button
+                HStack(alignment: .bottom) {
+                    VStack(alignment: .leading, spacing: Design.Spacing.xxs) {
+                        // Due date pill
+                        if let dueDate = task.reminderDate {
+                            HStack(spacing: Design.Spacing.xs) {
+                                Image(systemName: "clock")
+                                    .font(.system(size: 12))
+                                Text(formatDate(dueDate))
+                                    .font(Design.Typography.caption)
+                            }
+                            .padding(.horizontal, Design.Spacing.sm)
+                            .padding(.vertical, Design.Spacing.xxs)
+                            .background(
+                                Capsule()
+                                    .stroke(textColor.opacity(0.3), lineWidth: 1)
+                            )
+                            .foregroundColor(textColor)
+                        }
+                        
+                        // Priority pill
+                        if let priorityString = task.priority,
+                           let priority = Priority(rawValue: priorityString),
+                           priority != .medium {
+                            HStack(spacing: Design.Spacing.xxs) {
+                                Circle()
+                                    .fill(priorityColor(priority))
+                                    .frame(width: 8, height: 8)
+                                Text(priority.displayName)
+                                    .font(Design.Typography.caption)
+                            }
+                            .padding(.horizontal, Design.Spacing.sm)
+                            .padding(.vertical, Design.Spacing.xxs)
+                            .background(
+                                Capsule()
+                                    .stroke(textColor.opacity(0.3), lineWidth: 1)
+                            )
+                            .foregroundColor(textColor)
+                        }
+                    }
+                    
+                    Spacer()
+                    
+                    // Arrow button
+                    Image(systemName: "arrow.right")
+                        .font(.system(size: 16, weight: .bold))
+                        .foregroundColor(cardColor)
+                        .circleButtonStyle(size: 40)
+                }
+            }
+            .padding(Design.Spacing.lg)
+            .frame(minHeight: 160)
+            .largeCardStyle(color: cardColor)
+        }
+        .buttonStyle(CardButtonStyle())
+        .opacity(task.isCompleted ? 0.7 : 1)
+    }
+    
+    private func formatDate(_ date: Date) -> String {
+        let calendar = Calendar.current
+        if calendar.isDateInToday(date) {
+            let formatter = DateFormatter()
+            formatter.dateFormat = "h:mm a"
+            return "Today, \(formatter.string(from: date))"
+        } else if calendar.isDateInTomorrow(date) {
+            let formatter = DateFormatter()
+            formatter.dateFormat = "h:mm a"
+            return "Tomorrow, \(formatter.string(from: date))"
+        } else {
+            let formatter = DateFormatter()
+            formatter.dateFormat = "MMM d, h:mm a"
+            return formatter.string(from: date)
+        }
+    }
+    
+    private func priorityColor(_ priority: Priority) -> Color {
+        switch priority {
+        case .low: return CloudoTheme.lime
+        case .medium: return CloudoTheme.peach
+        case .high: return CloudoTheme.salmon
+        }
+    }
+}
+
+// MARK: - Card Button Style
+
+struct CardButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .scaleEffect(configuration.isPressed ? 0.97 : 1)
+            .animation(Design.Animation.snappy, value: configuration.isPressed)
+    }
+}
+
+// MARK: - Compact Task Card (for completed tasks section)
+
+struct CompactTaskCard: View {
+    let task: Task
+    let cardColor: Color
+    let onToggle: () -> Void
+    let onTap: () -> Void
+    
+    private var textColor: Color {
+        cardColor.isLight ? CloudoTheme.textOnColor : .white
+    }
     
     var body: some View {
         Button(action: onTap) {
             HStack(spacing: Design.Spacing.md) {
                 // Completion checkbox
-                completionButton
-                
-                // Task content
-                VStack(alignment: .leading, spacing: Design.Spacing.sm) {
-                    // Title
-                    Text(task.title ?? "Untitled")
-                        .font(Design.Typography.callout)
-                        .fontWeight(.semibold)
-                        .foregroundStyle(task.isCompleted ? .secondary : .primary)
-                        .strikethrough(task.isCompleted, color: .secondary)
-                        .lineLimit(2)
-                    
-                    // Metadata row
-                    HStack(spacing: Design.Spacing.sm) {
-                        // Category
-                        if let category = task.category {
-                            CategoryChip(category: category, isCompact: true)
-                        }
+                Button(action: onToggle) {
+                    ZStack {
+                        Circle()
+                            .stroke(textColor.opacity(0.3), lineWidth: 2)
+                            .frame(width: 24, height: 24)
                         
-                        // Due date
-                        if let dueDate = task.shortDueDate {
-                            DueDateChip(
-                                date: dueDate,
-                                isOverdue: task.isOverdue,
-                                isRecurring: task.isRecurring
-                            )
+                        if task.isCompleted {
+                            Circle()
+                                .fill(textColor)
+                                .frame(width: 24, height: 24)
+                            
+                            Image(systemName: "checkmark")
+                                .font(.system(size: 12, weight: .bold))
+                                .foregroundColor(cardColor)
                         }
-                        
-                        Spacer()
                     }
                 }
+                .buttonStyle(PlainButtonStyle())
                 
-                // Priority indicator
-                if task.priorityValue != .none {
-                    priorityIndicator
-                }
+                // Task title
+                Text(task.title ?? "Untitled")
+                    .font(Design.Typography.bodyMedium)
+                    .foregroundColor(textColor)
+                    .strikethrough(task.isCompleted, color: textColor.opacity(0.5))
+                    .lineLimit(1)
+                
+                Spacer()
+                
+                // Arrow
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundColor(textColor.opacity(0.5))
             }
+            .padding(Design.Spacing.md)
+            .largeCardStyle(color: cardColor.opacity(0.6), cornerRadius: Design.Radius.md)
+        }
+        .buttonStyle(CardButtonStyle())
+    }
+}
+
+// MARK: - Add Task Card (Floating action)
+
+struct AddTaskCard: View {
+    let action: () -> Void
+    
+    var body: some View {
+        Button(action: action) {
+            HStack {
+                Image(systemName: "plus")
+                    .font(.system(size: 20, weight: .bold))
+                Text("Add new task")
+                    .font(Design.Typography.headline)
+                Spacer()
+            }
+            .foregroundColor(.white)
             .padding(Design.Spacing.lg)
-            .background(cardBackground)
-            .contentShape(Rectangle())
+            .largeCardStyle(color: CloudoTheme.jetBlack)
         }
-        .buttonStyle(TaskCardButtonStyle())
-    }
-    
-    // MARK: - Completion Button
-    
-    private var completionButton: some View {
-        Button(action: handleCompletion) {
-            ZStack {
-                // Outer ring
-                Circle()
-                    .stroke(
-                        task.isCompleted 
-                            ? CloudoTheme.mint 
-                            : priorityColor.opacity(0.4),
-                        lineWidth: 2.5
-                    )
-                    .frame(width: 28, height: 28)
-                
-                // Filled state
-                if task.isCompleted || showCompletionAnimation {
-                    Circle()
-                        .fill(CloudoTheme.mintGradient)
-                        .frame(width: 28, height: 28)
-                        .scaleEffect(checkScale)
-                    
-                    Image(systemName: "checkmark")
-                        .font(.system(size: 13, weight: .bold))
-                        .foregroundColor(.white)
-                        .scaleEffect(checkScale)
-                }
-            }
-            .animation(Design.Animation.bouncy, value: showCompletionAnimation)
-            .animation(Design.Animation.bouncy, value: checkScale)
-        }
-        .buttonStyle(PlainButtonStyle())
-    }
-    
-    // MARK: - Priority Indicator
-    
-    private var priorityIndicator: some View {
-        VStack(spacing: 2) {
-            Image(systemName: task.priorityValue.icon)
-                .font(.system(size: 14, weight: .semibold))
-                .foregroundColor(priorityColor)
-            
-            if task.priorityValue == .high {
-                // Pulsing dot for high priority
-                Circle()
-                    .fill(CloudoTheme.coral)
-                    .frame(width: 4, height: 4)
-                    .modifier(PulseModifier())
-            }
-        }
-        .frame(width: 28)
-    }
-    
-    // MARK: - Card Background
-    
-    private var cardBackground: some View {
-        ZStack(alignment: .leading) {
-            // Main background
-            RoundedRectangle(cornerRadius: Design.Radius.lg, style: .continuous)
-                .fill(CloudoTheme.cardBackground)
-            
-            // Priority accent bar
-            if task.priorityValue != .none && !task.isCompleted {
-                HStack {
-                    RoundedRectangle(cornerRadius: 2)
-                        .fill(priorityGradient)
-                        .frame(width: 4)
-                        .padding(.vertical, Design.Spacing.sm)
-                    Spacer()
-                }
-            }
-        }
-        .shadow(color: shadowColor, radius: 10, x: 0, y: 4)
-        .shadow(color: Color.black.opacity(0.03), radius: 2, x: 0, y: 1)
-    }
-    
-    // MARK: - Computed Properties
-    
-    private var priorityColor: Color {
-        switch task.priorityValue {
-        case .none: return .secondary
-        case .low: return CloudoTheme.priorityLow
-        case .medium: return CloudoTheme.priorityMedium
-        case .high: return CloudoTheme.priorityHigh
-        }
-    }
-    
-    private var priorityGradient: LinearGradient {
-        switch task.priorityValue {
-        case .none: return LinearGradient(colors: [.clear], startPoint: .top, endPoint: .bottom)
-        case .low: return CloudoTheme.mintGradient
-        case .medium: return CloudoTheme.sunshineGradient
-        case .high: return CloudoTheme.coralGradient
-        }
-    }
-    
-    private var shadowColor: Color {
-        if task.isOverdue {
-            return CloudoTheme.coral.opacity(0.15)
-        } else if task.priorityValue == .high && !task.isCompleted {
-            return CloudoTheme.coral.opacity(0.1)
-        }
-        return Color.black.opacity(0.06)
-    }
-    
-    // MARK: - Actions
-    
-    private func handleCompletion() {
-        if appState.hapticsEnabled {
-            HapticService.shared.success()
-        }
-        
-        // Animate
-        withAnimation(Design.Animation.bouncy) {
-            showCompletionAnimation = true
-            checkScale = 1.2
-        }
-        
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-            withAnimation(Design.Animation.bouncy) {
-                checkScale = 1.0
-            }
-        }
-        
-        // Delay the actual completion
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
-            withAnimation(Design.Animation.smooth) {
-                if task.isRecurring && !task.isCompleted {
-                    NotificationService.shared.handleTaskCompletion(
-                        task: task,
-                        context: viewContext
-                    )
-                } else {
-                    task.toggleCompletion()
-                    
-                    if task.isCompleted {
-                        NotificationService.shared.cancelNotification(for: task)
-                    } else if task.reminderDate != nil {
-                        NotificationService.shared.scheduleNotification(for: task)
-                    }
-                    
-                    try? viewContext.save()
-                }
-                
-                showCompletionAnimation = false
-                onComplete()
-            }
-        }
-    }
-}
-
-// MARK: - Task Card Button Style
-
-struct TaskCardButtonStyle: ButtonStyle {
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .scaleEffect(configuration.isPressed ? 0.98 : 1.0)
-            .animation(Design.Animation.quick, value: configuration.isPressed)
-    }
-}
-
-// MARK: - Category Chip
-
-struct CategoryChip: View {
-    let category: Category
-    var isCompact: Bool = false
-    
-    var body: some View {
-        HStack(spacing: Design.Spacing.xs) {
-            Circle()
-                .fill(category.color)
-                .frame(width: isCompact ? 8 : 10, height: isCompact ? 8 : 10)
-            
-            Text(category.name ?? "")
-                .font(isCompact ? Design.Typography.caption : Design.Typography.footnote)
-                .foregroundStyle(.secondary)
-        }
-        .padding(.horizontal, Design.Spacing.sm)
-        .padding(.vertical, Design.Spacing.xs)
-        .background(
-            Capsule()
-                .fill(category.color.opacity(0.12))
-        )
-    }
-}
-
-// MARK: - Due Date Chip
-
-struct DueDateChip: View {
-    let date: String
-    let isOverdue: Bool
-    let isRecurring: Bool
-    
-    var body: some View {
-        HStack(spacing: Design.Spacing.xs) {
-            Image(systemName: isRecurring ? "arrow.trianglehead.2.counterclockwise.rotate.90" : "clock")
-                .font(.system(size: 10, weight: .semibold))
-            
-            Text(date)
-                .font(Design.Typography.caption)
-        }
-        .foregroundColor(isOverdue ? .white : (isRecurring ? CloudoTheme.primary : .secondary))
-        .padding(.horizontal, Design.Spacing.sm)
-        .padding(.vertical, Design.Spacing.xs)
-        .background(
-            Capsule()
-                .fill(isOverdue ? CloudoTheme.coral : (isRecurring ? CloudoTheme.primary.opacity(0.12) : Color(.systemGray6)))
-        )
-    }
-}
-
-// MARK: - Pulse Modifier
-
-struct PulseModifier: ViewModifier {
-    @State private var isPulsing = false
-    
-    func body(content: Content) -> some View {
-        content
-            .scaleEffect(isPulsing ? 1.5 : 1.0)
-            .opacity(isPulsing ? 0.5 : 1.0)
-            .animation(
-                .easeInOut(duration: 1.0)
-                .repeatForever(autoreverses: true),
-                value: isPulsing
-            )
-            .onAppear { isPulsing = true }
+        .buttonStyle(CardButtonStyle())
     }
 }
 
 // MARK: - Preview
 
 #Preview {
-    let context = PersistenceController.preview.container.viewContext
-    let task = Task(context: context)
-    task.title = "Review project proposal"
-    task.taskDescription = "Check the Q4 budget"
-    task.priority = Priority.high.rawValue
-    task.reminderDate = Date()
-    
-    let category = Category(context: context)
-    category.name = "Work"
-    category.colorHex = "#FF6B6B"
-    task.category = category
-    
-    return VStack(spacing: 16) {
-        TaskCard(task: task, onTap: {}, onComplete: {})
+    VStack(spacing: Design.Spacing.md) {
+        TaskCard(
+            task: PreviewData.sampleTask,
+            cardColor: CloudoTheme.purple,
+            onToggle: {},
+            onTap: {}
+        )
         
-        TaskCard(task: {
-            let t = Task(context: context)
-            t.title = "Buy groceries"
-            t.priority = Priority.low.rawValue
-            return t
-        }(), onTap: {}, onComplete: {})
+        CompactTaskCard(
+            task: PreviewData.sampleTask,
+            cardColor: CloudoTheme.lime,
+            onToggle: {},
+            onTap: {}
+        )
+        
+        AddTaskCard(action: {})
     }
     .padding()
-    .background(CloudoTheme.background)
-    .environmentObject(AppState())
+    .background(CloudoTheme.smokyWhite)
+}
+
+// MARK: - Preview Data
+
+enum PreviewData {
+    static var sampleTask: Task {
+        let context = PersistenceController.preview.container.viewContext
+        let task = Task(context: context)
+        task.id = UUID()
+        task.title = "Design new app interface"
+        task.notes = "Create colorful cards with bold typography"
+        task.priority = Priority.high.rawValue
+        task.isCompleted = false
+        task.createdAt = Date()
+        task.reminderDate = Date().addingTimeInterval(3600)
+        return task
+    }
 }

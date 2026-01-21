@@ -8,26 +8,28 @@
 import Foundation
 
 enum SortOption: String, CaseIterable, Identifiable {
-    case dateCreated = "Date Created"
-    case dueDate = "Due Date"
-    case priority = "Priority"
-    case alphabetical = "Alphabetical"
+    case dueDate = "dueDate"
+    case priority = "priority"
+    case dateCreated = "dateCreated"
+    case alphabetical = "alphabetical"
     
     var id: String { rawValue }
     
-    var icon: String {
+    var displayName: String {
         switch self {
-        case .dateCreated: return "clock"
-        case .dueDate: return "calendar"
-        case .priority: return "flag"
-        case .alphabetical: return "textformat.abc"
+        case .dueDate: return "Due Date"
+        case .priority: return "Priority"
+        case .dateCreated: return "Date Created"
+        case .alphabetical: return "Alphabetical"
         }
     }
     
-    var isAscending: Bool {
+    var icon: String {
         switch self {
-        case .alphabetical: return true
-        default: return false
+        case .dueDate: return "calendar"
+        case .priority: return "flag"
+        case .dateCreated: return "clock"
+        case .alphabetical: return "textformat.abc"
         }
     }
 }

@@ -2,268 +2,220 @@
 //  OnboardingView.swift
 //  Cloudo
 //
-//  Beautiful onboarding experience
+//  Playful onboarding with colorful geometric shapes
 //
 
 import SwiftUI
 
 struct OnboardingView: View {
-    
-    // MARK: - Properties
-    
-    @EnvironmentObject private var appState: AppState
-    @Environment(\.managedObjectContext) private var viewContext
-    
+    @Binding var hasCompletedOnboarding: Bool
     @State private var currentPage = 0
-    @State private var isAnimating = false
+    @State private var animateShapes = false
     
     private let pages: [OnboardingPage] = [
         OnboardingPage(
-            icon: "checkmark.circle.fill",
             title: "Welcome to\nCloudo",
-            subtitle: "Your tasks, beautifully organized",
-            description: "Stay productive and never miss a deadline.",
-            gradient: CloudoTheme.primaryGradient
+            subtitle: "Your beautiful task manager",
+            shapes: [
+                ShapeData(type: .circle, color: CloudoTheme.royalBlue, size: 120, offset: CGPoint(x: -60, y: -80)),
+                ShapeData(type: .triangle, color: CloudoTheme.lime, size: 80, offset: CGPoint(x: 70, y: -40), rotation: 15),
+                ShapeData(type: .cloud, color: CloudoTheme.purple, size: 60, offset: CGPoint(x: -50, y: 60)),
+                ShapeData(type: .rectangle, color: CloudoTheme.salmon, size: 50, offset: CGPoint(x: 80, y: 80), rotation: -15)
+            ]
         ),
         OnboardingPage(
-            icon: "lock.shield.fill",
-            title: "Privacy\nFirst",
-            subtitle: "Your data stays on your device",
-            description: "No accounts, no cloud sync, no tracking.\nYour tasks are yours alone.",
-            gradient: CloudoTheme.mintGradient
+            title: "Organize with\nstyle",
+            subtitle: "Colorful cards make tasks fun",
+            shapes: [
+                ShapeData(type: .rectangle, color: CloudoTheme.purple, size: 100, offset: CGPoint(x: -70, y: -60), rotation: 10),
+                ShapeData(type: .circle, color: CloudoTheme.salmon, size: 70, offset: CGPoint(x: 80, y: -30)),
+                ShapeData(type: .triangle, color: CloudoTheme.royalBlue, size: 60, offset: CGPoint(x: -20, y: 80), rotation: -20),
+                ShapeData(type: .cloud, color: CloudoTheme.lime, size: 50, offset: CGPoint(x: 60, y: 70))
+            ]
         ),
         OnboardingPage(
-            icon: "bell.fill",
-            title: "Smart\nReminders",
-            subtitle: "Never miss a task",
-            description: "Set reminders and recurring tasks\nto stay on top of your to-dos.",
-            gradient: CloudoTheme.coralGradient
+            title: "Never miss\na deadline",
+            subtitle: "Smart reminders keep you on track",
+            shapes: [
+                ShapeData(type: .cloud, color: CloudoTheme.royalBlue, size: 90, offset: CGPoint(x: -80, y: -50)),
+                ShapeData(type: .rectangle, color: CloudoTheme.lime, size: 70, offset: CGPoint(x: 60, y: -70), rotation: 25),
+                ShapeData(type: .circle, color: CloudoTheme.purple, size: 80, offset: CGPoint(x: 70, y: 50)),
+                ShapeData(type: .triangle, color: CloudoTheme.salmon, size: 55, offset: CGPoint(x: -60, y: 80), rotation: -10)
+            ]
         )
     ]
     
-    // MARK: - Body
-    
     var body: some View {
         ZStack {
-            // Animated background
-            backgroundView
+            // Background
+            CloudoTheme.background
+                .ignoresSafeArea()
             
             VStack(spacing: 0) {
-                // Skip button
-                HStack {
-                    Spacer()
-                    
-                    if currentPage < pages.count - 1 {
-                        Button(action: completeOnboarding) {
-                            Text("Skip")
-                                .font(Design.Typography.callout)
-                                .foregroundColor(.secondary)
-                        }
-                    }
-                }
-                .padding(.horizontal, Design.Spacing.xl)
-                .padding(.top, Design.Spacing.lg)
-                
                 // Page content
                 TabView(selection: $currentPage) {
                     ForEach(0..<pages.count, id: \.self) { index in
-                        pageView(pages[index], index: index)
+                        pageView(for: pages[index])
                             .tag(index)
                     }
                 }
                 .tabViewStyle(.page(indexDisplayMode: .never))
                 
                 // Bottom section
-                bottomSection
+                VStack(spacing: Design.Spacing.xl) {
+                    // Page indicators
+                    HStack(spacing: Design.Spacing.sm) {
+                        ForEach(0..<pages.count, id: \.self) { index in
+                            Capsule()
+                                .fill(currentPage == index ? CloudoTheme.jetBlack : CloudoTheme.jetBlack.opacity(0.2))
+                                .frame(width: currentPage == index ? 24 : 8, height: 8)
+                                .animation(Design.Animation.smooth, value: currentPage)
+                        }
+                    }
+                    
+                    // Action button
+                    Button(action: {
+                        if currentPage < pages.count - 1 {
+                            withAnimation(Design.Animation.smooth) {
+                                currentPage += 1
+                            }
+                        } else {
+                            withAnimation(Design.Animation.smooth) {
+                                hasCompletedOnboarding = true
+                            }
+                        }
+                    }) {
+                        Text(currentPage == pages.count - 1 ? "Get Started" : "Next")
+                            .font(Design.Typography.headline)
+                            .foregroundColor(.white)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, Design.Spacing.md)
+                            .background(CloudoTheme.jetBlack)
+                            .clipShape(Capsule())
+                    }
+                    .buttonStyle(ScaleButtonStyle())
+                    
+                    // Skip button
+                    if currentPage < pages.count - 1 {
+                        Button(action: {
+                            withAnimation(Design.Animation.smooth) {
+                                hasCompletedOnboarding = true
+                            }
+                        }) {
+                            Text("Skip")
+                                .font(Design.Typography.bodyMedium)
+                                .foregroundColor(CloudoTheme.textSecondary)
+                        }
+                    }
+                }
+                .padding(.horizontal, Design.Spacing.xl)
+                .padding(.bottom, Design.Spacing.xxxl)
             }
         }
         .onAppear {
-            withAnimation(Design.Animation.smooth.delay(0.2)) {
-                isAnimating = true
+            withAnimation(Design.Animation.smooth.delay(0.3)) {
+                animateShapes = true
             }
-        }
-    }
-    
-    // MARK: - Background
-    
-    private var backgroundView: some View {
-        ZStack {
-            CloudoTheme.background
-                .ignoresSafeArea()
-            
-            // Gradient orbs
-            GeometryReader { geometry in
-                Circle()
-                    .fill(CloudoTheme.primary.opacity(0.15))
-                    .frame(width: 300, height: 300)
-                    .blur(radius: 60)
-                    .offset(
-                        x: -100 + CGFloat(currentPage) * 50,
-                        y: -50
-                    )
-                
-                Circle()
-                    .fill(CloudoTheme.coral.opacity(0.1))
-                    .frame(width: 250, height: 250)
-                    .blur(radius: 50)
-                    .offset(
-                        x: geometry.size.width - 100 - CGFloat(currentPage) * 30,
-                        y: geometry.size.height * 0.4
-                    )
-                
-                Circle()
-                    .fill(CloudoTheme.mint.opacity(0.1))
-                    .frame(width: 200, height: 200)
-                    .blur(radius: 40)
-                    .offset(
-                        x: 50 + CGFloat(currentPage) * 40,
-                        y: geometry.size.height * 0.7
-                    )
-            }
-            .animation(Design.Animation.smooth, value: currentPage)
         }
     }
     
     // MARK: - Page View
     
-    private func pageView(_ page: OnboardingPage, index: Int) -> some View {
+    private func pageView(for page: OnboardingPage) -> some View {
         VStack(spacing: Design.Spacing.xxl) {
             Spacer()
             
-            // Icon
+            // Shapes area
             ZStack {
-                // Outer glow
-                Circle()
-                    .fill(page.gradient)
-                    .frame(width: 140, height: 140)
-                    .blur(radius: 30)
-                    .opacity(0.5)
-                
-                // Main circle
-                Circle()
-                    .fill(page.gradient)
-                    .frame(width: 120, height: 120)
-                    .shadow(color: Color.black.opacity(0.1), radius: 20, x: 0, y: 10)
-                
-                Image(systemName: page.icon)
-                    .font(.system(size: 50))
-                    .foregroundColor(.white)
+                ForEach(Array(page.shapes.enumerated()), id: \.offset) { index, shape in
+                    shapeView(for: shape)
+                        .opacity(animateShapes ? 1 : 0)
+                        .offset(
+                            x: animateShapes ? shape.offset.x : shape.offset.x * 0.5,
+                            y: animateShapes ? shape.offset.y : shape.offset.y * 0.5
+                        )
+                        .animation(
+                            Design.Animation.bouncy.delay(Double(index) * 0.1),
+                            value: animateShapes
+                        )
+                }
             }
-            .scaleEffect(isAnimating && currentPage == index ? 1.0 : 0.8)
-            .opacity(isAnimating ? 1.0 : 0.0)
+            .frame(height: 250)
             
             // Text content
-            VStack(spacing: Design.Spacing.lg) {
+            VStack(spacing: Design.Spacing.md) {
                 Text(page.title)
                     .font(Design.Typography.largeTitle)
+                    .foregroundColor(CloudoTheme.textPrimary)
                     .multilineTextAlignment(.center)
-                    .lineSpacing(4)
                 
                 Text(page.subtitle)
-                    .font(Design.Typography.title3)
-                    .foregroundColor(CloudoTheme.primary)
-                    .multilineTextAlignment(.center)
-                
-                Text(page.description)
                     .font(Design.Typography.body)
-                    .foregroundStyle(.secondary)
+                    .foregroundColor(CloudoTheme.textSecondary)
                     .multilineTextAlignment(.center)
-                    .lineSpacing(2)
             }
             .padding(.horizontal, Design.Spacing.xl)
-            .offset(y: isAnimating ? 0 : 30)
-            .opacity(isAnimating ? 1.0 : 0.0)
             
             Spacer()
             Spacer()
         }
     }
     
-    // MARK: - Bottom Section
-    
-    private var bottomSection: some View {
-        VStack(spacing: Design.Spacing.xxl) {
-            // Page indicators
-            HStack(spacing: Design.Spacing.sm) {
-                ForEach(0..<pages.count, id: \.self) { index in
-                    Capsule()
-                        .fill(index == currentPage ? CloudoTheme.primary : Color(.systemGray4))
-                        .frame(width: index == currentPage ? 28 : 8, height: 8)
-                }
+    @ViewBuilder
+    private func shapeView(for shape: ShapeData) -> some View {
+        Group {
+            switch shape.type {
+            case .circle:
+                Circle()
+                    .fill(shape.color)
+            case .triangle:
+                Triangle()
+                    .fill(shape.color)
+            case .rectangle:
+                RoundedRectangle(cornerRadius: Design.Radius.sm)
+                    .fill(shape.color)
+            case .cloud:
+                CloudShape()
+                    .fill(shape.color)
             }
-            .animation(Design.Animation.spring, value: currentPage)
-            
-            // Button
-            Button(action: nextPage) {
-                HStack(spacing: Design.Spacing.sm) {
-                    Text(currentPage == pages.count - 1 ? "Get Started" : "Continue")
-                        .font(Design.Typography.headline)
-                    
-                    Image(systemName: currentPage == pages.count - 1 ? "arrow.right" : "chevron.right")
-                        .font(.system(size: 14, weight: .bold))
-                }
-                .foregroundColor(.white)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, Design.Spacing.lg)
-                .background(CloudoTheme.primaryGradient)
-                .clipShape(RoundedRectangle(cornerRadius: Design.Radius.md, style: .continuous))
-                .shadow(color: CloudoTheme.primary.opacity(0.4), radius: 16, x: 0, y: 8)
-            }
-            .padding(.horizontal, Design.Spacing.xl)
         }
-        .padding(.bottom, Design.Spacing.huge)
-    }
-    
-    // MARK: - Actions
-    
-    private func nextPage() {
-        if appState.hapticsEnabled {
-            HapticService.shared.impact(.medium)
-        }
-        
-        if currentPage < pages.count - 1 {
-            withAnimation(Design.Animation.spring) {
-                currentPage += 1
-            }
-        } else {
-            completeOnboarding()
-        }
-    }
-    
-    private func completeOnboarding() {
-        // Create default categories
-        Category.createDefaultsIfNeeded(in: viewContext)
-        
-        // Request notification permissions
-        NotificationService.shared.requestAuthorization { granted in
-            appState.notificationsEnabled = granted
-        }
-        
-        // Complete onboarding with animation
-        if appState.hapticsEnabled {
-            HapticService.shared.success()
-        }
-        
-        withAnimation(Design.Animation.smooth) {
-            appState.hasCompletedOnboarding = true
-        }
+        .frame(width: shape.size, height: shape.size)
+        .rotationEffect(.degrees(shape.rotation))
     }
 }
 
-// MARK: - Onboarding Page Model
+// MARK: - Data Models
 
 struct OnboardingPage {
-    let icon: String
     let title: String
     let subtitle: String
-    let description: String
-    let gradient: LinearGradient
+    let shapes: [ShapeData]
+}
+
+struct ShapeData {
+    enum ShapeType {
+        case circle, triangle, rectangle, cloud
+    }
+    
+    let type: ShapeType
+    let color: Color
+    let size: CGFloat
+    let offset: CGPoint
+    var rotation: Double = 0
+}
+
+// MARK: - Button Style
+
+struct ScaleButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .scaleEffect(configuration.isPressed ? 0.96 : 1)
+            .animation(Design.Animation.quick, value: configuration.isPressed)
+    }
 }
 
 // MARK: - Preview
 
 #Preview {
-    OnboardingView()
-        .environmentObject(AppState())
-        .environment(\.managedObjectContext, PersistenceController.preview.container.viewContext)
+    OnboardingView(hasCompletedOnboarding: .constant(false))
 }

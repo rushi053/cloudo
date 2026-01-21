@@ -2,18 +2,35 @@
 //  TaskFormView.swift
 //  Cloudo
 //
-//  Beautiful form for creating and editing tasks
+//  Beautiful task form with colorful inputs
 //
 
 import SwiftUI
+import CoreData
+
+enum TaskFormMode {
+    case add
+    case edit(Task)
+}
 
 struct TaskFormView: View {
-    
-    // MARK: - Properties
-    
     @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.dismiss) private var dismiss
-    @EnvironmentObject private var appState: AppState
+    
+    let mode: TaskFormMode
+    
+    // Form state
+    @State private var title = ""
+    @State private var notes = ""
+    @State private var priority: Priority = .medium
+    @State private var selectedCategory: Category?
+    @State private var hasReminder = false
+    @State private var reminderDate = Date()
+    @State private var recurrence: Recurrence = .none
+    @State private var selectedColorIndex = 0
+    
+    // Animation state
+    @State private var showContent = false
     
     @FetchRequest(
         sortDescriptors: [NSSortDescriptor(keyPath: \Category.name, ascending: true)],
@@ -21,43 +38,23 @@ struct TaskFormView: View {
     )
     private var categories: FetchedResults<Category>
     
-    // Form state
-    @State private var title: String
-    @State private var description: String
-    @State private var selectedPriority: Priority
-    @State private var selectedCategory: Category?
-    @State private var reminderDate: Date?
-    @State private var selectedRecurrence: Recurrence
-    
-    // UI state
-    @State private var showDatePicker = false
-    @State private var showCategoryPicker = false
-    @State private var tempDate = Date()
-    @FocusState private var isTitleFocused: Bool
-    
-    // Mode
-    let task: Task?
-    let isEditing: Bool
-    
-    // MARK: - Initialization
-    
-    init(task: Task? = nil) {
-        self.task = task
-        self.isEditing = task != nil
-        
-        _title = State(initialValue: task?.title ?? "")
-        _description = State(initialValue: task?.taskDescription ?? "")
-        _selectedPriority = State(initialValue: task?.priorityValue ?? .none)
-        _selectedCategory = State(initialValue: task?.category)
-        _reminderDate = State(initialValue: task?.reminderDate)
-        _selectedRecurrence = State(initialValue: task?.recurrenceValue ?? .none)
-        
-        if let date = task?.reminderDate {
-            _tempDate = State(initialValue: date)
-        }
+    private var isEditing: Bool {
+        if case .edit = mode { return true }
+        return false
     }
     
-    // MARK: - Body
+    private var task: Task? {
+        if case .edit(let task) = mode { return task }
+        return nil
+    }
+    
+    private var formTitle: String {
+        isEditing ? "Edit Task" : "New Task"
+    }
+    
+    private var canSave: Bool {
+        !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
     
     var body: some View {
         NavigationStack {
@@ -66,395 +63,395 @@ struct TaskFormView: View {
                     .ignoresSafeArea()
                 
                 ScrollView {
-                    VStack(spacing: Design.Spacing.xl) {
-                        // Title & Description
-                        titleSection
+                    VStack(spacing: Design.Spacing.lg) {
+                        // Color preview card
+                        colorPreviewCard
+                            .opacity(showContent ? 1 : 0)
+                            .offset(y: showContent ? 0 : 20)
                         
-                        // Category
-                        categorySection
+                        // Title input
+                        titleInput
+                            .opacity(showContent ? 1 : 0)
+                            .offset(y: showContent ? 0 : 20)
                         
-                        // Priority
-                        prioritySection
+                        // Notes input
+                        notesInput
+                            .opacity(showContent ? 1 : 0)
+                            .offset(y: showContent ? 0 : 20)
                         
-                        // Reminder
+                        // Priority selector
+                        prioritySelector
+                            .opacity(showContent ? 1 : 0)
+                            .offset(y: showContent ? 0 : 20)
+                        
+                        // Color selector
+                        colorSelector
+                            .opacity(showContent ? 1 : 0)
+                            .offset(y: showContent ? 0 : 20)
+                        
+                        // Reminder section
                         reminderSection
+                            .opacity(showContent ? 1 : 0)
+                            .offset(y: showContent ? 0 : 20)
                         
-                        // Recurrence
-                        if reminderDate != nil {
-                            recurrenceSection
+                        // Recurrence (if reminder is set)
+                        if hasReminder {
+                            recurrenceSelector
+                                .opacity(showContent ? 1 : 0)
+                                .offset(y: showContent ? 0 : 20)
                         }
+                        
+                        // Delete button for edit mode
+                        if isEditing {
+                            deleteButton
+                                .opacity(showContent ? 1 : 0)
+                                .offset(y: showContent ? 0 : 20)
+                        }
+                        
+                        Spacer(minLength: 100)
                     }
                     .padding(Design.Spacing.lg)
                 }
             }
-            .navigationTitle(isEditing ? "Edit Task" : "New Task")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") {
                         dismiss()
                     }
-                    .foregroundColor(.secondary)
+                    .foregroundColor(CloudoTheme.textSecondary)
+                }
+                
+                ToolbarItem(placement: .principal) {
+                    Text(formTitle)
+                        .font(Design.Typography.headline)
                 }
                 
                 ToolbarItem(placement: .confirmationAction) {
-                    Button(isEditing ? "Save" : "Add") {
-                        saveTask()
+                    Button(action: saveTask) {
+                        Text("Save")
+                            .font(Design.Typography.headline)
+                            .foregroundColor(canSave ? CloudoTheme.royalBlue : CloudoTheme.textSecondary)
                     }
-                    .fontWeight(.bold)
-                    .foregroundColor(title.trimmingCharacters(in: .whitespaces).isEmpty 
-                                     ? .secondary 
-                                     : CloudoTheme.primary)
-                    .disabled(title.trimmingCharacters(in: .whitespaces).isEmpty)
+                    .disabled(!canSave)
                 }
-            }
-            .sheet(isPresented: $showDatePicker) {
-                datePickerSheet
-            }
-            .sheet(isPresented: $showCategoryPicker) {
-                categoryPickerSheet
             }
             .onAppear {
-                if !isEditing {
-                    isTitleFocused = true
+                loadExistingData()
+                withAnimation(Design.Animation.smooth.delay(0.1)) {
+                    showContent = true
                 }
             }
         }
     }
     
-    // MARK: - Title Section
+    // MARK: - Color Preview Card
     
-    private var titleSection: some View {
-        VStack(alignment: .leading, spacing: Design.Spacing.sm) {
-            sectionHeader("WHAT'S THE TASK?")
+    private var colorPreviewCard: some View {
+        VStack(alignment: .leading, spacing: Design.Spacing.md) {
+            Text(title.isEmpty ? "Task Title" : title)
+                .font(Design.Typography.title2)
+                .foregroundColor(selectedColor.isLight ? CloudoTheme.textOnColor : .white)
+                .lineLimit(2)
             
-            VStack(spacing: 0) {
-                TextField("Task name", text: $title)
-                    .font(Design.Typography.body)
-                    .fontWeight(.medium)
-                    .focused($isTitleFocused)
-                    .padding(Design.Spacing.lg)
-                
-                Divider()
-                    .padding(.horizontal, Design.Spacing.lg)
-                
-                TextField("Add notes...", text: $description, axis: .vertical)
-                    .font(Design.Typography.body)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(2...5)
-                    .padding(Design.Spacing.lg)
+            if !notes.isEmpty {
+                Text(notes)
+                    .font(Design.Typography.subheadline)
+                    .foregroundColor(selectedColor.isLight ? CloudoTheme.textSecondary : .white.opacity(0.7))
+                    .lineLimit(2)
             }
-            .background(CloudoTheme.cardBackground)
-            .clipShape(RoundedRectangle(cornerRadius: Design.Radius.lg, style: .continuous))
-        }
-    }
-    
-    // MARK: - Category Section
-    
-    private var categorySection: some View {
-        VStack(alignment: .leading, spacing: Design.Spacing.sm) {
-            sectionHeader("CATEGORY")
             
-            Button(action: { showCategoryPicker = true }) {
-                HStack {
-                    if let category = selectedCategory {
-                        Circle()
-                            .fill(category.color)
-                            .frame(width: 12, height: 12)
-                        
-                        Text(category.name ?? "")
-                            .font(Design.Typography.body)
-                            .foregroundStyle(.primary)
-                    } else {
-                        Image(systemName: "tag")
-                            .font(.system(size: 16))
-                            .foregroundStyle(.secondary)
-                        
-                        Text("Select category")
-                            .font(Design.Typography.body)
-                            .foregroundStyle(.secondary)
-                    }
-                    
-                    Spacer()
-                    
-                    if selectedCategory != nil {
-                        Button(action: { selectedCategory = nil }) {
-                            Image(systemName: "xmark.circle.fill")
-                                .foregroundStyle(.tertiary)
-                        }
-                    } else {
-                        Image(systemName: "chevron.right")
-                            .font(.system(size: 14, weight: .semibold))
-                            .foregroundStyle(.tertiary)
-                    }
+            HStack {
+                // Priority pill
+                HStack(spacing: Design.Spacing.xxs) {
+                    Circle()
+                        .fill(priorityColor)
+                        .frame(width: 8, height: 8)
+                    Text(priority.displayName)
+                        .font(Design.Typography.caption)
                 }
-                .padding(Design.Spacing.lg)
-                .background(CloudoTheme.cardBackground)
-                .clipShape(RoundedRectangle(cornerRadius: Design.Radius.lg, style: .continuous))
+                .padding(.horizontal, Design.Spacing.sm)
+                .padding(.vertical, Design.Spacing.xxs)
+                .background(
+                    Capsule()
+                        .stroke((selectedColor.isLight ? CloudoTheme.textOnColor : Color.white).opacity(0.3), lineWidth: 1)
+                )
+                .foregroundColor(selectedColor.isLight ? CloudoTheme.textOnColor : .white)
+                
+                Spacer()
+                
+                // Arrow button
+                Image(systemName: "arrow.right")
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundColor(selectedColor)
+                    .frame(width: 36, height: 36)
+                    .background(selectedColor.isLight ? CloudoTheme.jetBlack : .white)
+                    .clipShape(Circle())
             }
-            .buttonStyle(PlainButtonStyle())
+        }
+        .padding(Design.Spacing.lg)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(minHeight: 140)
+        .background(selectedColor)
+        .clipShape(RoundedRectangle(cornerRadius: Design.Radius.xl))
+        .animation(Design.Animation.smooth, value: selectedColorIndex)
+        .animation(Design.Animation.smooth, value: priority)
+    }
+    
+    private var selectedColor: Color {
+        CloudoTheme.cardColors[selectedColorIndex % CloudoTheme.cardColors.count]
+    }
+    
+    private var priorityColor: Color {
+        switch priority {
+        case .low: return CloudoTheme.lime
+        case .medium: return CloudoTheme.peach
+        case .high: return CloudoTheme.salmon
         }
     }
     
-    // MARK: - Priority Section
+    // MARK: - Title Input
     
-    private var prioritySection: some View {
-        VStack(alignment: .leading, spacing: Design.Spacing.sm) {
-            sectionHeader("PRIORITY")
+    private var titleInput: some View {
+        VStack(alignment: .leading, spacing: Design.Spacing.xs) {
+            Text("Title")
+                .font(Design.Typography.caption)
+                .foregroundColor(CloudoTheme.textSecondary)
+            
+            TextField("What do you need to do?", text: $title)
+                .font(Design.Typography.body)
+                .padding(Design.Spacing.md)
+                .background(CloudoTheme.secondaryBackground)
+                .clipShape(RoundedRectangle(cornerRadius: Design.Radius.md))
+        }
+    }
+    
+    // MARK: - Notes Input
+    
+    private var notesInput: some View {
+        VStack(alignment: .leading, spacing: Design.Spacing.xs) {
+            Text("Notes")
+                .font(Design.Typography.caption)
+                .foregroundColor(CloudoTheme.textSecondary)
+            
+            TextField("Add more details...", text: $notes, axis: .vertical)
+                .font(Design.Typography.body)
+                .lineLimit(3...6)
+                .padding(Design.Spacing.md)
+                .background(CloudoTheme.secondaryBackground)
+                .clipShape(RoundedRectangle(cornerRadius: Design.Radius.md))
+        }
+    }
+    
+    // MARK: - Priority Selector
+    
+    private var prioritySelector: some View {
+        VStack(alignment: .leading, spacing: Design.Spacing.xs) {
+            Text("Priority")
+                .font(Design.Typography.caption)
+                .foregroundColor(CloudoTheme.textSecondary)
             
             HStack(spacing: Design.Spacing.sm) {
-                ForEach(Priority.allCases) { priority in
-                    priorityButton(priority)
+                ForEach(Priority.allCases, id: \.self) { p in
+                    Button(action: { 
+                        withAnimation(Design.Animation.snappy) {
+                            priority = p
+                        }
+                    }) {
+                        HStack(spacing: Design.Spacing.xs) {
+                            Circle()
+                                .fill(priorityColorFor(p))
+                                .frame(width: 10, height: 10)
+                            
+                            Text(p.displayName)
+                                .font(Design.Typography.bodyMedium)
+                        }
+                        .padding(.horizontal, Design.Spacing.md)
+                        .padding(.vertical, Design.Spacing.sm)
+                        .background(
+                            Capsule()
+                                .fill(priority == p ? CloudoTheme.jetBlack : CloudoTheme.secondaryBackground)
+                        )
+                        .foregroundColor(priority == p ? .white : CloudoTheme.textPrimary)
+                    }
+                    .buttonStyle(PlainButtonStyle())
                 }
             }
         }
     }
     
-    private func priorityButton(_ priority: Priority) -> some View {
-        let isSelected = selectedPriority == priority
-        let color = priorityColor(for: priority)
-        
-        return Button(action: {
-            withAnimation(Design.Animation.snappy) {
-                selectedPriority = priority
-            }
-            if appState.hapticsEnabled {
-                HapticService.shared.selection()
-            }
-        }) {
-            VStack(spacing: Design.Spacing.xs) {
-                Image(systemName: priority.icon)
-                    .font(.system(size: 18, weight: .semibold))
-                
-                Text(priority.name)
-                    .font(Design.Typography.caption)
-                    .fontWeight(.medium)
-            }
-            .foregroundColor(isSelected ? .white : color)
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, Design.Spacing.md)
-            .background(
-                RoundedRectangle(cornerRadius: Design.Radius.md, style: .continuous)
-                    .fill(isSelected ? color : CloudoTheme.cardBackground)
-            )
-            .shadow(color: isSelected ? color.opacity(0.3) : .clear, radius: 8, x: 0, y: 4)
+    private func priorityColorFor(_ p: Priority) -> Color {
+        switch p {
+        case .low: return CloudoTheme.lime
+        case .medium: return CloudoTheme.peach
+        case .high: return CloudoTheme.salmon
         }
-        .buttonStyle(PlainButtonStyle())
     }
     
-    private func priorityColor(for priority: Priority) -> Color {
-        switch priority {
-        case .none: return .secondary
-        case .low: return CloudoTheme.priorityLow
-        case .medium: return CloudoTheme.priorityMedium
-        case .high: return CloudoTheme.priorityHigh
+    // MARK: - Color Selector
+    
+    private var colorSelector: some View {
+        VStack(alignment: .leading, spacing: Design.Spacing.xs) {
+            Text("Card Color")
+                .font(Design.Typography.caption)
+                .foregroundColor(CloudoTheme.textSecondary)
+            
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: Design.Spacing.sm) {
+                    ForEach(0..<CloudoTheme.cardColors.count, id: \.self) { index in
+                        Button(action: {
+                            withAnimation(Design.Animation.snappy) {
+                                selectedColorIndex = index
+                            }
+                        }) {
+                            Circle()
+                                .fill(CloudoTheme.cardColors[index])
+                                .frame(width: 44, height: 44)
+                                .overlay(
+                                    Circle()
+                                        .stroke(CloudoTheme.jetBlack, lineWidth: selectedColorIndex == index ? 3 : 0)
+                                )
+                                .overlay(
+                                    Image(systemName: "checkmark")
+                                        .font(.system(size: 16, weight: .bold))
+                                        .foregroundColor(CloudoTheme.cardColors[index].isLight ? CloudoTheme.jetBlack : .white)
+                                        .opacity(selectedColorIndex == index ? 1 : 0)
+                                )
+                        }
+                        .buttonStyle(PlainButtonStyle())
+                    }
+                }
+                .padding(.vertical, Design.Spacing.xs)
+            }
         }
     }
     
     // MARK: - Reminder Section
     
     private var reminderSection: some View {
-        VStack(alignment: .leading, spacing: Design.Spacing.sm) {
-            sectionHeader("REMINDER")
-            
-            Button(action: {
-                tempDate = reminderDate ?? Date().addingTimeInterval(3600) // Default to 1 hour from now
-                showDatePicker = true
-            }) {
-                HStack {
-                    ZStack {
-                        Circle()
-                            .fill(reminderDate != nil ? CloudoTheme.primary.opacity(0.15) : Color(.systemGray6))
-                            .frame(width: 36, height: 36)
-                        
-                        Image(systemName: reminderDate == nil ? "bell" : "bell.fill")
-                            .font(.system(size: 16))
-                            .foregroundColor(reminderDate != nil ? CloudoTheme.primary : .secondary)
-                    }
+        VStack(alignment: .leading, spacing: Design.Spacing.md) {
+            // Toggle
+            HStack {
+                VStack(alignment: .leading, spacing: Design.Spacing.xxs) {
+                    Text("Reminder")
+                        .font(Design.Typography.bodyMedium)
+                        .foregroundColor(CloudoTheme.textPrimary)
                     
-                    if let date = reminderDate {
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(date, style: .date)
-                                .font(Design.Typography.callout)
-                                .fontWeight(.medium)
-                                .foregroundStyle(.primary)
-                            Text(date, style: .time)
-                                .font(Design.Typography.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                    } else {
-                        Text("Add reminder")
-                            .font(Design.Typography.body)
-                            .foregroundStyle(.secondary)
-                    }
-                    
-                    Spacer()
-                    
-                    if reminderDate != nil {
-                        Button(action: {
-                            reminderDate = nil
-                            selectedRecurrence = .none
-                        }) {
-                            Image(systemName: "xmark.circle.fill")
-                                .foregroundStyle(.tertiary)
-                        }
-                    } else {
-                        Image(systemName: "chevron.right")
-                            .font(.system(size: 14, weight: .semibold))
-                            .foregroundStyle(.tertiary)
-                    }
+                    Text("Get notified at a specific time")
+                        .font(Design.Typography.caption)
+                        .foregroundColor(CloudoTheme.textSecondary)
                 }
-                .padding(Design.Spacing.lg)
-                .background(CloudoTheme.cardBackground)
-                .clipShape(RoundedRectangle(cornerRadius: Design.Radius.lg, style: .continuous))
-            }
-            .buttonStyle(PlainButtonStyle())
-        }
-    }
-    
-    // MARK: - Recurrence Section
-    
-    private var recurrenceSection: some View {
-        VStack(alignment: .leading, spacing: Design.Spacing.sm) {
-            sectionHeader("REPEAT")
-            
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: Design.Spacing.sm) {
-                    ForEach(Recurrence.allCases) { recurrence in
-                        recurrenceChip(recurrence)
-                    }
-                }
-            }
-        }
-    }
-    
-    private func recurrenceChip(_ recurrence: Recurrence) -> some View {
-        let isSelected = selectedRecurrence == recurrence
-        
-        return Button(action: {
-            withAnimation(Design.Animation.snappy) {
-                selectedRecurrence = recurrence
-            }
-            if appState.hapticsEnabled {
-                HapticService.shared.selection()
-            }
-        }) {
-            HStack(spacing: Design.Spacing.xs) {
-                Image(systemName: recurrence.icon)
-                    .font(.system(size: 12, weight: .semibold))
                 
-                Text(recurrence.name)
-                    .font(Design.Typography.caption)
-                    .fontWeight(.medium)
+                Spacer()
+                
+                Toggle("", isOn: $hasReminder)
+                    .labelsHidden()
+                    .tint(CloudoTheme.jetBlack)
             }
-            .foregroundColor(isSelected ? .white : .primary)
-            .padding(.horizontal, Design.Spacing.md)
-            .padding(.vertical, Design.Spacing.sm)
-            .background(
-                Capsule()
-                    .fill(isSelected ? CloudoTheme.primary : CloudoTheme.cardBackground)
-            )
-            .shadow(color: isSelected ? CloudoTheme.primary.opacity(0.3) : .clear, radius: 6, x: 0, y: 3)
-        }
-        .buttonStyle(PlainButtonStyle())
-    }
-    
-    // MARK: - Date Picker Sheet
-    
-    private var datePickerSheet: some View {
-        NavigationStack {
-            VStack(spacing: 0) {
+            .padding(Design.Spacing.md)
+            .background(CloudoTheme.secondaryBackground)
+            .clipShape(RoundedRectangle(cornerRadius: Design.Radius.md))
+            
+            // Date picker
+            if hasReminder {
                 DatePicker(
-                    "",
-                    selection: $tempDate,
+                    "Reminder Date",
+                    selection: $reminderDate,
                     in: Date()...,
                     displayedComponents: [.date, .hourAndMinute]
                 )
                 .datePickerStyle(.graphical)
-                .tint(CloudoTheme.primary)
-                .padding()
-                
-                Spacer()
-            }
-            .background(CloudoTheme.background)
-            .navigationTitle("Set Reminder")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") {
-                        showDatePicker = false
-                    }
-                    .foregroundColor(.secondary)
-                }
-                
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Set") {
-                        reminderDate = tempDate
-                        showDatePicker = false
-                    }
-                    .fontWeight(.bold)
-                    .foregroundColor(CloudoTheme.primary)
-                }
+                .tint(CloudoTheme.royalBlue)
+                .padding(Design.Spacing.md)
+                .background(CloudoTheme.secondaryBackground)
+                .clipShape(RoundedRectangle(cornerRadius: Design.Radius.md))
             }
         }
-        .presentationDetents([.medium, .large])
     }
     
-    // MARK: - Category Picker Sheet
+    // MARK: - Recurrence Selector
     
-    private var categoryPickerSheet: some View {
-        NavigationStack {
-            List {
-                ForEach(categories) { category in
-                    Button(action: {
-                        selectedCategory = category
-                        showCategoryPicker = false
-                    }) {
-                        HStack(spacing: Design.Spacing.md) {
-                            Circle()
-                                .fill(category.color)
-                                .frame(width: 16, height: 16)
-                            
-                            Text(category.name ?? "")
-                                .font(Design.Typography.body)
-                                .foregroundStyle(.primary)
-                            
-                            Spacer()
-                            
-                            if selectedCategory?.id == category.id {
-                                Image(systemName: "checkmark.circle.fill")
-                                    .foregroundColor(CloudoTheme.primary)
+    private var recurrenceSelector: some View {
+        VStack(alignment: .leading, spacing: Design.Spacing.xs) {
+            Text("Repeat")
+                .font(Design.Typography.caption)
+                .foregroundColor(CloudoTheme.textSecondary)
+            
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: Design.Spacing.xs) {
+                    ForEach(Recurrence.allCases, id: \.self) { r in
+                        Button(action: {
+                            withAnimation(Design.Animation.snappy) {
+                                recurrence = r
                             }
+                        }) {
+                            Text(r.displayName)
+                                .font(Design.Typography.caption)
+                                .padding(.horizontal, Design.Spacing.md)
+                                .padding(.vertical, Design.Spacing.sm)
+                                .background(
+                                    Capsule()
+                                        .fill(recurrence == r ? CloudoTheme.jetBlack : CloudoTheme.secondaryBackground)
+                                )
+                                .foregroundColor(recurrence == r ? .white : CloudoTheme.textPrimary)
                         }
-                        .padding(.vertical, Design.Spacing.xs)
+                        .buttonStyle(PlainButtonStyle())
                     }
-                }
-            }
-            .listStyle(.insetGrouped)
-            .navigationTitle("Select Category")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") {
-                        showCategoryPicker = false
-                    }
-                    .foregroundColor(.secondary)
                 }
             }
         }
-        .presentationDetents([.medium])
     }
     
-    // MARK: - Helpers
+    // MARK: - Delete Button
     
-    private func sectionHeader(_ title: String) -> some View {
-        Text(title)
-            .font(Design.Typography.caption2)
-            .foregroundStyle(.secondary)
-            .padding(.leading, Design.Spacing.xs)
+    private var deleteButton: some View {
+        Button(action: deleteTask) {
+            HStack {
+                Image(systemName: "trash.fill")
+                Text("Delete Task")
+            }
+            .font(Design.Typography.bodyMedium)
+            .foregroundColor(.white)
+            .frame(maxWidth: .infinity)
+            .padding(Design.Spacing.md)
+            .background(CloudoTheme.salmon)
+            .clipShape(RoundedRectangle(cornerRadius: Design.Radius.md))
+        }
+        .buttonStyle(CardButtonStyle())
     }
     
-    // MARK: - Save Action
+    // MARK: - Actions
+    
+    private func loadExistingData() {
+        guard let task = task else { return }
+        
+        title = task.title ?? ""
+        notes = task.notes ?? ""
+        
+        if let priorityString = task.priority,
+           let p = Priority(rawValue: priorityString) {
+            priority = p
+        }
+        
+        if let reminderDate = task.reminderDate {
+            hasReminder = true
+            self.reminderDate = reminderDate
+        }
+        
+        if let recurrenceString = task.recurrence,
+           let r = Recurrence(rawValue: recurrenceString) {
+            recurrence = r
+        }
+        
+        selectedCategory = task.category
+        
+        // Find color index from category or use default
+        if let category = task.category,
+           let colorHex = category.colorHex,
+           let index = CloudoTheme.cardColorHexes.firstIndex(of: colorHex) {
+            selectedColorIndex = index
+        }
+    }
     
     private func saveTask() {
         let taskToSave: Task
@@ -467,49 +464,78 @@ struct TaskFormView: View {
             taskToSave.createdAt = Date()
         }
         
-        taskToSave.title = title.trimmingCharacters(in: .whitespaces)
-        taskToSave.taskDescription = description.isEmpty ? nil : description
-        taskToSave.priority = selectedPriority.rawValue
+        taskToSave.title = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        taskToSave.notes = notes.trimmingCharacters(in: .whitespacesAndNewlines)
+        taskToSave.priority = priority.rawValue
+        taskToSave.recurrence = recurrence.rawValue
         taskToSave.category = selectedCategory
-        taskToSave.reminderDate = reminderDate
-        taskToSave.recurrenceType = selectedRecurrence.rawValue
-        taskToSave.isRecurring = selectedRecurrence != .none
         
-        if !isEditing {
-            taskToSave.isCompleted = false
+        // Handle reminder
+        if hasReminder {
+            taskToSave.reminderDate = reminderDate
+            
+            // Cancel existing notification
+            if let existingTask = task {
+                NotificationService.shared.cancelNotification(for: existingTask)
+            }
+            
+            // Schedule new notification
+            NotificationService.shared.scheduleNotification(for: taskToSave, at: reminderDate)
+        } else {
+            // Cancel notification if reminder was removed
+            if let existingTask = task {
+                NotificationService.shared.cancelNotification(for: existingTask)
+            }
+            taskToSave.reminderDate = nil
+        }
+        
+        // Create or update category with selected color
+        if selectedCategory == nil {
+            // Find or create a category with the selected color
+            let colorHex = CloudoTheme.cardColorHexes[selectedColorIndex]
+            
+            let fetchRequest: NSFetchRequest<Category> = Category.fetchRequest()
+            fetchRequest.predicate = NSPredicate(format: "colorHex == %@", colorHex)
+            
+            if let existingCategory = try? viewContext.fetch(fetchRequest).first {
+                taskToSave.category = existingCategory
+            } else {
+                let newCategory = Category(context: viewContext)
+                newCategory.id = UUID()
+                newCategory.name = "Tasks"
+                newCategory.colorHex = colorHex
+                taskToSave.category = newCategory
+            }
         }
         
         do {
             try viewContext.save()
-            
-            if let _ = reminderDate, !taskToSave.isCompleted {
-                NotificationService.shared.requestAuthorization { granted in
-                    if granted {
-                        NotificationService.shared.scheduleNotification(for: taskToSave)
-                    }
-                }
-            } else {
-                NotificationService.shared.cancelNotification(for: taskToSave)
-            }
-            
-            if appState.hapticsEnabled {
-                HapticService.shared.success()
-            }
-            
             dismiss()
         } catch {
             print("Error saving task: \(error)")
-            if appState.hapticsEnabled {
-                HapticService.shared.error()
-            }
+        }
+    }
+    
+    private func deleteTask() {
+        guard let task = task else { return }
+        
+        // Cancel notification
+        NotificationService.shared.cancelNotification(for: task)
+        
+        viewContext.delete(task)
+        
+        do {
+            try viewContext.save()
+            dismiss()
+        } catch {
+            print("Error deleting task: \(error)")
         }
     }
 }
 
 // MARK: - Preview
 
-#Preview("New Task") {
-    TaskFormView()
+#Preview("Add Task") {
+    TaskFormView(mode: .add)
         .environment(\.managedObjectContext, PersistenceController.preview.container.viewContext)
-        .environmentObject(AppState())
 }

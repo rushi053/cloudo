@@ -15,7 +15,7 @@ extension Category {
     /// SwiftUI Color from hex string
     var color: Color {
         guard let hex = colorHex else {
-            return CloudoTheme.categoryColors[0]
+            return CloudoTheme.cardColors[0]
         }
         return Color(hex: hex)
     }
@@ -82,12 +82,13 @@ extension Category {
             let count = try context.count(for: request)
             guard count == 0 else { return }
             
+            // Use the colorful Behance-inspired palette
             let defaults: [(String, String)] = [
-                ("Personal", "#80CCE6"),
-                ("Work", "#FF9999"),
-                ("Shopping", "#99E699"),
-                ("Health", "#FFD699"),
-                ("Finance", "#B399E6")
+                ("Personal", "#D9B8F3"),  // Purple
+                ("Work", "#DFF37D"),       // Lime
+                ("Shopping", "#B8E6D4"),   // Mint
+                ("Health", "#EE5E37"),     // Salmon
+                ("Finance", "#4558C8")     // Blue
             ]
             
             for (name, color) in defaults {

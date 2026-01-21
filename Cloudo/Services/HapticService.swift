@@ -6,15 +6,22 @@
 //
 
 import UIKit
+import SwiftUI
 
-/// Singleton service for haptic feedback
-final class HapticService {
+/// Observable service for haptic feedback - can be used as environment object
+final class HapticService: ObservableObject {
     
-    // MARK: - Singleton
+    // MARK: - Singleton (for services)
     
     static let shared = HapticService()
     
     // MARK: - Properties
+    
+    @Published var isEnabled: Bool {
+        didSet {
+            UserDefaults.standard.set(isEnabled, forKey: "hapticFeedbackEnabled")
+        }
+    }
     
     private let lightGenerator = UIImpactFeedbackGenerator(style: .light)
     private let mediumGenerator = UIImpactFeedbackGenerator(style: .medium)
@@ -24,17 +31,17 @@ final class HapticService {
     
     // MARK: - Initialization
     
-    private init() {
-        // Prepare generators for reduced latency
+    init() {
+        // Load saved preference, default to true
+        self.isEnabled = UserDefaults.standard.object(forKey: "hapticFeedbackEnabled") as? Bool ?? true
         prepareGenerators()
     }
     
     // MARK: - Public Methods
     
     /// Trigger impact feedback
-    /// - Parameter style: The impact style
     func impact(_ style: UIImpactFeedbackGenerator.FeedbackStyle) {
-        guard isHapticsEnabled else { return }
+        guard isEnabled else { return }
         
         switch style {
         case .light:
@@ -53,53 +60,48 @@ final class HapticService {
     }
     
     /// Trigger notification feedback
-    /// - Parameter type: The notification type
     func notification(_ type: UINotificationFeedbackGenerator.FeedbackType) {
-        guard isHapticsEnabled else { return }
+        guard isEnabled else { return }
         notificationGenerator.notificationOccurred(type)
     }
     
-    /// Trigger selection feedback (for pickers, etc.)
+    /// Trigger selection feedback (for pickers, toggles)
     func selection() {
-        guard isHapticsEnabled else { return }
+        guard isEnabled else { return }
         selectionGenerator.selectionChanged()
     }
     
-    /// Success feedback - use for completed actions
+    /// Success feedback - completed actions
     func success() {
         notification(.success)
     }
     
-    /// Error feedback - use for failed actions
+    /// Error feedback - failed actions
     func error() {
         notification(.error)
     }
     
-    /// Warning feedback - use for destructive actions
+    /// Warning feedback - destructive actions
     func warning() {
         notification(.warning)
     }
     
-    /// Light tap - use for button presses
+    /// Light tap - button presses
     func tap() {
         impact(.light)
     }
     
-    /// Prepare generators for upcoming feedback
+    /// Medium tap - important interactions
+    func mediumTap() {
+        impact(.medium)
+    }
+    
+    /// Prepare generators for reduced latency
     func prepareGenerators() {
         lightGenerator.prepare()
         mediumGenerator.prepare()
+        heavyGenerator.prepare()
         notificationGenerator.prepare()
         selectionGenerator.prepare()
-    }
-    
-    // MARK: - Private Properties
-    
-    private var isHapticsEnabled: Bool {
-        // Default to true if not set
-        if UserDefaults.standard.object(forKey: "hapticsEnabled") == nil {
-            return true
-        }
-        return UserDefaults.standard.bool(forKey: "hapticsEnabled")
     }
 }

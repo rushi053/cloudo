@@ -75,11 +75,11 @@ struct PersistenceController {
     
     private static func createSampleCategories(in context: NSManagedObjectContext) -> [Category] {
         let categoryData: [(String, String)] = [
-            ("Work", "#FF9999"),
-            ("Personal", "#80CCE6"),
-            ("Shopping", "#99E699"),
-            ("Health", "#FFD699"),
-            ("Learning", "#B399E6")
+            ("Work", "#D9B8F3"),
+            ("Personal", "#DFF37D"),
+            ("Shopping", "#B8E6D4"),
+            ("Health", "#EE5E37"),
+            ("Learning", "#4558C8")
         ]
         
         return categoryData.map { name, color in
@@ -93,20 +93,20 @@ struct PersistenceController {
     }
     
     private static func createSampleTasks(in context: NSManagedObjectContext, categories: [Category]) {
-        let taskData: [(String, String?, Int16, Bool, Int)] = [
-            ("Review project proposal", "Check the Q4 budget allocations", 3, false, 0),
-            ("Buy groceries", "Milk, eggs, bread, vegetables", 1, false, 2),
-            ("Morning workout", "30 min cardio + stretching", 2, true, 3),
-            ("Read SwiftUI book", "Chapter 5: Advanced Animations", 1, false, 4),
-            ("Call mom", nil, 2, false, 1),
+        let taskData: [(String, String?, Priority, Bool, Int)] = [
+            ("Review project proposal", "Check the Q4 budget allocations", .high, false, 0),
+            ("Buy groceries", "Milk, eggs, bread, vegetables", .low, false, 2),
+            ("Morning workout", "30 min cardio + stretching", .medium, true, 3),
+            ("Read SwiftUI book", "Chapter 5: Advanced Animations", .low, false, 4),
+            ("Call mom", nil, .medium, false, 1),
         ]
         
         for (index, data) in taskData.enumerated() {
             let task = Task(context: context)
             task.id = UUID()
             task.title = data.0
-            task.taskDescription = data.1
-            task.priority = data.2
+            task.notes = data.1
+            task.priority = data.2.rawValue
             task.isCompleted = false
             task.createdAt = Date().addingTimeInterval(Double(-index * 3600))
             task.category = categories[data.4]
@@ -114,8 +114,7 @@ struct PersistenceController {
             // Add reminder for some tasks
             if data.3 {
                 task.reminderDate = Calendar.current.date(byAdding: .day, value: 1, to: Date())
-                task.isRecurring = true
-                task.recurrenceType = Recurrence.daily.rawValue
+                task.recurrence = Recurrence.daily.rawValue
             }
         }
     }
