@@ -2,14 +2,13 @@
 //  DesignSystem.swift
 //  Cloudo
 //
-//  Centralized design system for consistent UI
+//  Modern, vibrant design system
 //
 
 import SwiftUI
 
 // MARK: - Design Tokens
 
-/// Core design tokens for the app
 enum Design {
     
     // MARK: - Spacing
@@ -23,15 +22,16 @@ enum Design {
         static let xl: CGFloat = 20
         static let xxl: CGFloat = 24
         static let xxxl: CGFloat = 32
+        static let huge: CGFloat = 48
     }
     
     // MARK: - Corner Radius
     
     enum Radius {
-        static let sm: CGFloat = 8
-        static let md: CGFloat = 12
-        static let lg: CGFloat = 16
-        static let xl: CGFloat = 20
+        static let sm: CGFloat = 12
+        static let md: CGFloat = 16
+        static let lg: CGFloat = 20
+        static let xl: CGFloat = 28
         static let full: CGFloat = 100
     }
     
@@ -40,15 +40,15 @@ enum Design {
     enum Typography {
         static let largeTitle = Font.system(size: 34, weight: .bold, design: .rounded)
         static let title = Font.system(size: 28, weight: .bold, design: .rounded)
-        static let title2 = Font.system(size: 22, weight: .semibold, design: .rounded)
+        static let title2 = Font.system(size: 22, weight: .bold, design: .rounded)
         static let title3 = Font.system(size: 18, weight: .semibold, design: .rounded)
         static let headline = Font.system(size: 17, weight: .semibold, design: .rounded)
-        static let body = Font.system(size: 17, weight: .regular, design: .rounded)
-        static let callout = Font.system(size: 16, weight: .regular, design: .rounded)
-        static let subheadline = Font.system(size: 15, weight: .regular, design: .rounded)
-        static let footnote = Font.system(size: 13, weight: .regular, design: .rounded)
-        static let caption = Font.system(size: 12, weight: .regular, design: .rounded)
-        static let caption2 = Font.system(size: 11, weight: .regular, design: .rounded)
+        static let body = Font.system(size: 16, weight: .regular, design: .rounded)
+        static let callout = Font.system(size: 15, weight: .medium, design: .rounded)
+        static let subheadline = Font.system(size: 14, weight: .regular, design: .rounded)
+        static let footnote = Font.system(size: 13, weight: .medium, design: .rounded)
+        static let caption = Font.system(size: 12, weight: .medium, design: .rounded)
+        static let caption2 = Font.system(size: 11, weight: .semibold, design: .rounded)
     }
     
     // MARK: - Animation
@@ -57,97 +57,146 @@ enum Design {
         static let quick = SwiftUI.Animation.easeOut(duration: 0.15)
         static let standard = SwiftUI.Animation.easeInOut(duration: 0.25)
         static let smooth = SwiftUI.Animation.easeInOut(duration: 0.35)
-        static let spring = SwiftUI.Animation.spring(response: 0.35, dampingFraction: 0.7)
-        static let bouncy = SwiftUI.Animation.spring(response: 0.4, dampingFraction: 0.6)
-    }
-    
-    // MARK: - Shadows
-    
-    enum Shadow {
-        static let sm = (color: Color.black.opacity(0.05), radius: CGFloat(4), y: CGFloat(2))
-        static let md = (color: Color.black.opacity(0.08), radius: CGFloat(8), y: CGFloat(4))
-        static let lg = (color: Color.black.opacity(0.12), radius: CGFloat(16), y: CGFloat(8))
+        static let spring = SwiftUI.Animation.spring(response: 0.4, dampingFraction: 0.75)
+        static let bouncy = SwiftUI.Animation.spring(response: 0.5, dampingFraction: 0.6)
+        static let snappy = SwiftUI.Animation.spring(response: 0.3, dampingFraction: 0.8)
     }
 }
 
 // MARK: - Color Theme
 
-/// App color theme - adapts to light/dark mode automatically
 struct CloudoTheme {
     
-    // MARK: - Brand Colors
+    // MARK: - Brand Colors (Vibrant & Fun)
     
-    /// Primary brand color - vibrant blue
-    static let primary = Color(red: 0.35, green: 0.55, blue: 0.95)
+    /// Primary gradient colors
+    static let gradientStart = Color(hex: "#667EEA") // Vibrant purple-blue
+    static let gradientEnd = Color(hex: "#764BA2")   // Deep purple
     
-    /// Secondary brand color
-    static let secondary = Color(red: 0.55, green: 0.65, blue: 0.85)
+    /// Accent colors
+    static let coral = Color(hex: "#FF6B6B")         // Warm coral red
+    static let mint = Color(hex: "#4ECDC4")          // Fresh mint
+    static let sunshine = Color(hex: "#FFE66D")      // Bright yellow
+    static let peach = Color(hex: "#FFA07A")         // Soft peach
+    static let lavender = Color(hex: "#B19CD9")      // Soft lavender
+    static let sky = Color(hex: "#87CEEB")           // Sky blue
     
-    /// Accent color for highlights
-    static let accent = Color(red: 0.95, green: 0.55, blue: 0.35)
+    // MARK: - Semantic Colors
     
-    // MARK: - System Semantic Colors (auto-adapt to light/dark)
+    static let primary = Color(hex: "#667EEA")
+    static let secondary = Color(hex: "#A0AEC0")
     
-    /// Background colors
-    static let background = Color(UIColor.systemBackground)
-    static let backgroundSecondary = Color(UIColor.secondarySystemBackground)
-    static let backgroundTertiary = Color(UIColor.tertiarySystemBackground)
+    /// Background colors - Light mode
+    static var background: Color {
+        Color(UIColor { traitCollection in
+            traitCollection.userInterfaceStyle == .dark
+                ? UIColor(red: 0.08, green: 0.08, blue: 0.12, alpha: 1)
+                : UIColor(red: 0.96, green: 0.97, blue: 0.98, alpha: 1)
+        })
+    }
     
-    /// Text colors
-    static let textPrimary = Color(UIColor.label)
-    static let textSecondary = Color(UIColor.secondaryLabel)
-    static let textTertiary = Color(UIColor.tertiaryLabel)
+    static var cardBackground: Color {
+        Color(UIColor { traitCollection in
+            traitCollection.userInterfaceStyle == .dark
+                ? UIColor(red: 0.12, green: 0.12, blue: 0.18, alpha: 1)
+                : UIColor.white
+        })
+    }
     
-    /// Semantic colors
-    static let success = Color.green
-    static let warning = Color.orange
-    static let error = Color.red
+    static var elevatedBackground: Color {
+        Color(UIColor { traitCollection in
+            traitCollection.userInterfaceStyle == .dark
+                ? UIColor(red: 0.15, green: 0.15, blue: 0.22, alpha: 1)
+                : UIColor.white
+        })
+    }
     
-    // MARK: - Category Colors
+    // MARK: - Priority Colors (More vibrant)
+    
+    static let priorityLow = Color(hex: "#4ECDC4")    // Mint
+    static let priorityMedium = Color(hex: "#FFB347") // Warm orange
+    static let priorityHigh = Color(hex: "#FF6B6B")   // Coral
+    
+    // MARK: - Category Colors (Fun & Distinct)
     
     static let categoryColors: [Color] = [
-        Color(red: 1.0, green: 0.6, blue: 0.6),     // Coral
-        Color(red: 1.0, green: 0.8, blue: 0.5),     // Peach
-        Color(red: 0.95, green: 0.9, blue: 0.5),    // Yellow
-        Color(red: 0.6, green: 0.9, blue: 0.6),     // Mint
-        Color(red: 0.5, green: 0.8, blue: 0.9),     // Sky
-        Color(red: 0.7, green: 0.6, blue: 0.9),     // Lavender
-        Color(red: 0.9, green: 0.6, blue: 0.8),     // Pink
-        Color(red: 0.7, green: 0.7, blue: 0.75),    // Gray
+        Color(hex: "#FF6B6B"), // Coral
+        Color(hex: "#4ECDC4"), // Mint
+        Color(hex: "#FFE66D"), // Sunshine
+        Color(hex: "#667EEA"), // Purple-blue
+        Color(hex: "#FFA07A"), // Peach
+        Color(hex: "#B19CD9"), // Lavender
+        Color(hex: "#87CEEB"), // Sky
+        Color(hex: "#98D8C8"), // Sea foam
     ]
     
     static let categoryColorHexes: [String] = [
-        "#FF9999", "#FFD699", "#F2E680", "#99E699",
-        "#80CCE6", "#B399E6", "#E699CC", "#B3B3BF"
+        "#FF6B6B", "#4ECDC4", "#FFE66D", "#667EEA",
+        "#FFA07A", "#B19CD9", "#87CEEB", "#98D8C8"
     ]
+    
+    // MARK: - Gradients
+    
+    static let primaryGradient = LinearGradient(
+        colors: [gradientStart, gradientEnd],
+        startPoint: .topLeading,
+        endPoint: .bottomTrailing
+    )
+    
+    static let coralGradient = LinearGradient(
+        colors: [Color(hex: "#FF6B6B"), Color(hex: "#FF8E8E")],
+        startPoint: .topLeading,
+        endPoint: .bottomTrailing
+    )
+    
+    static let mintGradient = LinearGradient(
+        colors: [Color(hex: "#4ECDC4"), Color(hex: "#7EDDD6")],
+        startPoint: .topLeading,
+        endPoint: .bottomTrailing
+    )
+    
+    static let sunshineGradient = LinearGradient(
+        colors: [Color(hex: "#FFE66D"), Color(hex: "#FFF0A0")],
+        startPoint: .topLeading,
+        endPoint: .bottomTrailing
+    )
 }
 
 // MARK: - View Extensions
 
 extension View {
     
-    /// Apply card styling
-    func cardStyle() -> some View {
+    /// Apply modern card styling with shadow
+    func cardStyle(cornerRadius: CGFloat = Design.Radius.lg) -> some View {
         self
-            .background(CloudoTheme.backgroundSecondary)
+            .background(CloudoTheme.cardBackground)
+            .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+            .shadow(color: Color.black.opacity(0.06), radius: 12, x: 0, y: 4)
+            .shadow(color: Color.black.opacity(0.04), radius: 4, x: 0, y: 2)
+    }
+    
+    /// Apply glassmorphism effect
+    func glassStyle() -> some View {
+        self
+            .background(.ultraThinMaterial)
             .clipShape(RoundedRectangle(cornerRadius: Design.Radius.lg, style: .continuous))
-            .shadow(
-                color: Design.Shadow.sm.color,
-                radius: Design.Shadow.sm.radius,
-                y: Design.Shadow.sm.y
-            )
     }
     
     /// Apply button press effect
     func pressable(isPressed: Bool) -> some View {
         self
-            .scaleEffect(isPressed ? 0.96 : 1.0)
+            .scaleEffect(isPressed ? 0.97 : 1.0)
             .animation(Design.Animation.quick, value: isPressed)
     }
     
-    /// Apply standard padding
-    func standardPadding() -> some View {
-        self.padding(Design.Spacing.lg)
+    /// Shimmer loading effect
+    @ViewBuilder
+    func shimmer(_ isActive: Bool = true) -> some View {
+        if isActive {
+            self.modifier(ShimmerModifier())
+        } else {
+            self
+        }
     }
     
     /// Hide keyboard
@@ -161,11 +210,41 @@ extension View {
     }
 }
 
+// MARK: - Shimmer Effect
+
+struct ShimmerModifier: ViewModifier {
+    @State private var phase: CGFloat = 0
+    
+    func body(content: Content) -> some View {
+        content
+            .overlay(
+                GeometryReader { geometry in
+                    LinearGradient(
+                        colors: [
+                            .clear,
+                            .white.opacity(0.3),
+                            .clear
+                        ],
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    )
+                    .frame(width: geometry.size.width * 2)
+                    .offset(x: -geometry.size.width + (geometry.size.width * 2 * phase))
+                }
+                .mask(content)
+            )
+            .onAppear {
+                withAnimation(.linear(duration: 1.5).repeatForever(autoreverses: false)) {
+                    phase = 1
+                }
+            }
+    }
+}
+
 // MARK: - Color Extensions
 
 extension Color {
     
-    /// Initialize from hex string
     init(hex: String) {
         let hex = hex.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)
         var int: UInt64 = 0
@@ -173,11 +252,11 @@ extension Color {
         
         let a, r, g, b: UInt64
         switch hex.count {
-        case 3: // RGB (12-bit)
+        case 3:
             (a, r, g, b) = (255, (int >> 8) * 17, (int >> 4 & 0xF) * 17, (int & 0xF) * 17)
-        case 6: // RGB (24-bit)
+        case 6:
             (a, r, g, b) = (255, int >> 16, int >> 8 & 0xFF, int & 0xFF)
-        case 8: // ARGB (32-bit)
+        case 8:
             (a, r, g, b) = (int >> 24, int >> 16 & 0xFF, int >> 8 & 0xFF, int & 0xFF)
         default:
             (a, r, g, b) = (255, 0, 0, 0)
@@ -196,7 +275,6 @@ extension Color {
 // MARK: - Placeholder Extension
 
 extension View {
-    /// Custom placeholder modifier
     func placeholder<Content: View>(
         when shouldShow: Bool,
         alignment: Alignment = .leading,
@@ -206,5 +284,14 @@ extension View {
             placeholder().opacity(shouldShow ? 1 : 0)
             self
         }
+    }
+}
+
+// MARK: - Gradient Text
+
+extension Text {
+    func gradientForeground(_ gradient: LinearGradient) -> some View {
+        self.overlay(gradient)
+            .mask(self)
     }
 }

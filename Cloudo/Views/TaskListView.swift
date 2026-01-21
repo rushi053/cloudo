@@ -2,7 +2,7 @@
 //  TaskListView.swift
 //  Cloudo
 //
-//  Main task list view with filtering and sorting
+//  Beautiful task list with modern header and filtering
 //
 
 import SwiftUI
@@ -21,7 +21,6 @@ struct TaskListView: View {
     @State private var selectedCategory: Category?
     @State private var selectedSort: SortOption = .dateCreated
     @State private var showTaskDetail: Task?
-    @State private var showSortMenu = false
     
     // MARK: - Fetch Request
     
@@ -53,12 +52,10 @@ struct TaskListView: View {
     private var filteredTasks: [Task] {
         var result = Array(tasks)
         
-        // Filter by category
         if let category = selectedCategory {
             result = result.filter { $0.category?.id == category.id }
         }
         
-        // Filter by search text
         if !searchText.isEmpty {
             result = result.filter { task in
                 let titleMatch = task.title?.localizedCaseInsensitiveContains(searchText) ?? false
@@ -67,10 +64,7 @@ struct TaskListView: View {
             }
         }
         
-        // Sort
-        result = sortTasks(result)
-        
-        return result
+        return sortTasks(result)
     }
     
     private func sortTasks(_ tasks: [Task]) -> [Task] {
@@ -90,38 +84,146 @@ struct TaskListView: View {
         }
     }
     
+    private var taskCount: Int {
+        filteredTasks.count
+    }
+    
+    private var overdueCount: Int {
+        filteredTasks.filter { $0.isOverdue }.count
+    }
+    
     // MARK: - Body
     
     var body: some View {
-        NavigationStack {
-            ZStack {
-                Color(.systemGroupedBackground)
-                    .ignoresSafeArea()
+        ZStack {
+            CloudoTheme.background
+                .ignoresSafeArea()
+            
+            VStack(spacing: 0) {
+                // Header
+                headerView
                 
-                VStack(spacing: 0) {
-                    // Category filter
-                    if !categories.isEmpty {
-                        categoryFilter
-                    }
-                    
-                    // Task list
-                    if filteredTasks.isEmpty {
-                        emptyState
-                    } else {
-                        taskList
+                // Search bar
+                searchBar
+                    .padding(.horizontal, Design.Spacing.lg)
+                    .padding(.bottom, Design.Spacing.md)
+                
+                // Category filter
+                if !categories.isEmpty {
+                    categoryFilter
+                        .padding(.bottom, Design.Spacing.md)
+                }
+                
+                // Task list or empty state
+                if filteredTasks.isEmpty {
+                    emptyState
+                } else {
+                    taskList
+                }
+            }
+        }
+        .sheet(item: $showTaskDetail) { task in
+            TaskFormView(task: task)
+        }
+    }
+    
+    // MARK: - Header
+    
+    private var headerView: some View {
+        HStack(alignment: .bottom) {
+            VStack(alignment: .leading, spacing: Design.Spacing.xs) {
+                // Greeting or title
+                Text(showCompleted ? "Completed" : greeting)
+                    .font(Design.Typography.title)
+                    .foregroundStyle(.primary)
+                
+                // Subtitle with count
+                if !showCompleted && taskCount > 0 {
+                    Text("\(taskCount) task\(taskCount == 1 ? "" : "s") remaining")
+                        .font(Design.Typography.subheadline)
+                        .foregroundStyle(.secondary)
+                } else if showCompleted {
+                    Text("Great work! 🎉")
+                        .font(Design.Typography.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            
+            Spacer()
+            
+            // Sort button
+            sortMenu
+        }
+        .padding(.horizontal, Design.Spacing.lg)
+        .padding(.top, Design.Spacing.lg)
+        .padding(.bottom, Design.Spacing.md)
+    }
+    
+    private var greeting: String {
+        let hour = Calendar.current.component(.hour, from: Date())
+        switch hour {
+        case 5..<12: return "Good morning ☀️"
+        case 12..<17: return "Good afternoon 🌤"
+        case 17..<21: return "Good evening 🌅"
+        default: return "Good night 🌙"
+        }
+    }
+    
+    // MARK: - Search Bar
+    
+    private var searchBar: some View {
+        HStack(spacing: Design.Spacing.md) {
+            Image(systemName: "magnifyingglass")
+                .font(.system(size: 16, weight: .medium))
+                .foregroundColor(.secondary)
+            
+            TextField("Search tasks...", text: $searchText)
+                .font(Design.Typography.body)
+            
+            if !searchText.isEmpty {
+                Button(action: { searchText = "" }) {
+                    Image(systemName: "xmark.circle.fill")
+                        .foregroundColor(.secondary)
+                }
+            }
+        }
+        .padding(Design.Spacing.md)
+        .background(
+            RoundedRectangle(cornerRadius: Design.Radius.md, style: .continuous)
+                .fill(CloudoTheme.cardBackground)
+        )
+    }
+    
+    // MARK: - Sort Menu
+    
+    private var sortMenu: some View {
+        Menu {
+            ForEach(SortOption.allCases) { option in
+                Button(action: { selectedSort = option }) {
+                    HStack {
+                        Image(systemName: option.icon)
+                        Text(option.rawValue)
+                        if selectedSort == option {
+                            Image(systemName: "checkmark")
+                        }
                     }
                 }
             }
-            .navigationTitle(showCompleted ? "Completed" : "Tasks")
-            .searchable(text: $searchText, prompt: "Search tasks...")
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    sortMenuButton
-                }
+        } label: {
+            HStack(spacing: Design.Spacing.xs) {
+                Image(systemName: "arrow.up.arrow.down")
+                    .font(.system(size: 12, weight: .semibold))
+                
+                Text(selectedSort.rawValue)
+                    .font(Design.Typography.caption)
             }
-            .sheet(item: $showTaskDetail) { task in
-                TaskFormView(task: task)
-            }
+            .foregroundColor(CloudoTheme.primary)
+            .padding(.horizontal, Design.Spacing.md)
+            .padding(.vertical, Design.Spacing.sm)
+            .background(
+                Capsule()
+                    .fill(CloudoTheme.primary.opacity(0.1))
+            )
         }
     }
     
@@ -130,26 +232,22 @@ struct TaskListView: View {
     private var categoryFilter: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: Design.Spacing.sm) {
-                // All categories pill
-                categoryPill(nil, name: "All")
+                categoryPill(nil, name: "All", color: CloudoTheme.primary)
                 
-                // Individual categories
                 ForEach(categories) { category in
-                    categoryPill(category, name: category.name ?? "")
+                    categoryPill(category, name: category.name ?? "", color: category.color)
                 }
             }
             .padding(.horizontal, Design.Spacing.lg)
-            .padding(.vertical, Design.Spacing.md)
         }
-        .background(Color(.systemBackground))
     }
     
-    private func categoryPill(_ category: Category?, name: String) -> some View {
+    private func categoryPill(_ category: Category?, name: String, color: Color) -> some View {
         let isSelected = (category == nil && selectedCategory == nil) ||
                         (category?.id == selectedCategory?.id)
         
         return Button(action: {
-            withAnimation(Design.Animation.quick) {
+            withAnimation(Design.Animation.snappy) {
                 selectedCategory = category
             }
             if appState.hapticsEnabled {
@@ -157,23 +255,24 @@ struct TaskListView: View {
             }
         }) {
             HStack(spacing: Design.Spacing.xs) {
-                if let category = category {
+                if category != nil {
                     Circle()
-                        .fill(category.color)
+                        .fill(color)
                         .frame(width: 8, height: 8)
                 }
                 
                 Text(name)
-                    .font(Design.Typography.subheadline)
-                    .fontWeight(isSelected ? .semibold : .regular)
+                    .font(Design.Typography.footnote)
+                    .fontWeight(isSelected ? .semibold : .medium)
             }
+            .foregroundColor(isSelected ? .white : .primary)
             .padding(.horizontal, Design.Spacing.md)
             .padding(.vertical, Design.Spacing.sm)
             .background(
                 Capsule()
-                    .fill(isSelected ? Color.blue.opacity(0.15) : Color(.systemGray6))
+                    .fill(isSelected ? color : CloudoTheme.cardBackground)
             )
-            .foregroundColor(isSelected ? .blue : .primary)
+            .shadow(color: isSelected ? color.opacity(0.3) : .clear, radius: 8, x: 0, y: 4)
         }
         .buttonStyle(PlainButtonStyle())
     }
@@ -183,6 +282,11 @@ struct TaskListView: View {
     private var taskList: some View {
         ScrollView {
             LazyVStack(spacing: Design.Spacing.md) {
+                // Overdue section
+                if !showCompleted && overdueCount > 0 {
+                    overdueHeader
+                }
+                
                 ForEach(filteredTasks, id: \.objectID) { task in
                     TaskCard(
                         task: task,
@@ -190,35 +294,56 @@ struct TaskListView: View {
                         onComplete: { }
                     )
                     .transition(.asymmetric(
-                        insertion: .scale.combined(with: .opacity),
-                        removal: .scale.combined(with: .opacity)
+                        insertion: .scale(scale: 0.9).combined(with: .opacity),
+                        removal: .scale(scale: 0.9).combined(with: .opacity)
                     ))
                 }
             }
             .padding(.horizontal, Design.Spacing.lg)
-            .padding(.vertical, Design.Spacing.md)
-            .padding(.bottom, 100) // Space for tab bar
+            .padding(.bottom, 140) // Space for tab bar + FAB
         }
+    }
+    
+    private var overdueHeader: some View {
+        HStack(spacing: Design.Spacing.sm) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .foregroundColor(CloudoTheme.coral)
+            
+            Text("\(overdueCount) overdue")
+                .font(Design.Typography.footnote)
+                .fontWeight(.semibold)
+                .foregroundColor(CloudoTheme.coral)
+            
+            Spacer()
+        }
+        .padding(.vertical, Design.Spacing.sm)
     }
     
     // MARK: - Empty State
     
     private var emptyState: some View {
-        VStack(spacing: Design.Spacing.lg) {
+        VStack(spacing: Design.Spacing.xl) {
             Spacer()
             
-            Image(systemName: showCompleted ? "checkmark.circle" : "checklist")
-                .font(.system(size: 64))
-                .foregroundStyle(.tertiary)
+            // Illustration
+            ZStack {
+                Circle()
+                    .fill(CloudoTheme.primary.opacity(0.1))
+                    .frame(width: 120, height: 120)
+                
+                Image(systemName: showCompleted ? "checkmark.seal.fill" : "sparkles")
+                    .font(.system(size: 48))
+                    .foregroundStyle(CloudoTheme.primaryGradient)
+            }
             
             VStack(spacing: Design.Spacing.sm) {
-                Text(showCompleted ? "No completed tasks" : "No tasks yet")
+                Text(showCompleted ? "No completed tasks yet" : "All caught up!")
                     .font(Design.Typography.title3)
                     .foregroundStyle(.primary)
                 
                 Text(showCompleted 
-                     ? "Tasks you complete will appear here"
-                     : "Tap the + button to add your first task")
+                     ? "Tasks you complete will show up here"
+                     : "Tap the + button to add a new task")
                     .font(Design.Typography.subheadline)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
@@ -227,47 +352,7 @@ struct TaskListView: View {
             Spacer()
             Spacer()
         }
-        .padding(Design.Spacing.xl)
-    }
-    
-    // MARK: - Sort Menu
-    
-    private var sortMenuButton: some View {
-        Menu {
-            ForEach(SortOption.allCases) { option in
-                Button(action: {
-                    selectedSort = option
-                }) {
-                    HStack {
-                        Image(systemName: option.icon)
-                        Text(option.rawValue)
-                        
-                        if selectedSort == option {
-                            Spacer()
-                            Image(systemName: "checkmark")
-                        }
-                    }
-                }
-            }
-        } label: {
-            Image(systemName: "arrow.up.arrow.down")
-                .font(.system(size: 16, weight: .medium))
-        }
-    }
-    
-    // MARK: - Actions
-    
-    private func deleteTask(_ task: Task) {
-        withAnimation {
-            NotificationService.shared.cancelNotification(for: task)
-            viewContext.delete(task)
-            
-            do {
-                try viewContext.save()
-            } catch {
-                print("Error deleting task: \(error)")
-            }
-        }
+        .padding(Design.Spacing.xxl)
     }
 }
 

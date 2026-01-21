@@ -2,8 +2,7 @@
 //  TaskFormView.swift
 //  Cloudo
 //
-//  Reusable form for creating and editing tasks
-//  Used by both AddTaskSheet and EditTaskSheet
+//  Beautiful form for creating and editing tasks
 //
 
 import SwiftUI
@@ -34,6 +33,7 @@ struct TaskFormView: View {
     @State private var showDatePicker = false
     @State private var showCategoryPicker = false
     @State private var tempDate = Date()
+    @FocusState private var isTitleFocused: Bool
     
     // Mode
     let task: Task?
@@ -45,7 +45,6 @@ struct TaskFormView: View {
         self.task = task
         self.isEditing = task != nil
         
-        // Initialize state from task or defaults
         _title = State(initialValue: task?.title ?? "")
         _description = State(initialValue: task?.taskDescription ?? "")
         _selectedPriority = State(initialValue: task?.priorityValue ?? .none)
@@ -62,28 +61,32 @@ struct TaskFormView: View {
     
     var body: some View {
         NavigationStack {
-            ScrollView {
-                VStack(spacing: Design.Spacing.xl) {
-                    // Title & Description
-                    titleSection
-                    
-                    // Category
-                    categorySection
-                    
-                    // Priority
-                    prioritySection
-                    
-                    // Reminder
-                    reminderSection
-                    
-                    // Recurrence (only if reminder is set)
-                    if reminderDate != nil {
-                        recurrenceSection
+            ZStack {
+                CloudoTheme.background
+                    .ignoresSafeArea()
+                
+                ScrollView {
+                    VStack(spacing: Design.Spacing.xl) {
+                        // Title & Description
+                        titleSection
+                        
+                        // Category
+                        categorySection
+                        
+                        // Priority
+                        prioritySection
+                        
+                        // Reminder
+                        reminderSection
+                        
+                        // Recurrence
+                        if reminderDate != nil {
+                            recurrenceSection
+                        }
                     }
+                    .padding(Design.Spacing.lg)
                 }
-                .padding(Design.Spacing.lg)
             }
-            .background(Color(.systemGroupedBackground))
             .navigationTitle(isEditing ? "Edit Task" : "New Task")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -91,13 +94,17 @@ struct TaskFormView: View {
                     Button("Cancel") {
                         dismiss()
                     }
+                    .foregroundColor(.secondary)
                 }
                 
                 ToolbarItem(placement: .confirmationAction) {
                     Button(isEditing ? "Save" : "Add") {
                         saveTask()
                     }
-                    .fontWeight(.semibold)
+                    .fontWeight(.bold)
+                    .foregroundColor(title.trimmingCharacters(in: .whitespaces).isEmpty 
+                                     ? .secondary 
+                                     : CloudoTheme.primary)
                     .disabled(title.trimmingCharacters(in: .whitespaces).isEmpty)
                 }
             }
@@ -107,32 +114,42 @@ struct TaskFormView: View {
             .sheet(isPresented: $showCategoryPicker) {
                 categoryPickerSheet
             }
+            .onAppear {
+                if !isEditing {
+                    isTitleFocused = true
+                }
+            }
         }
     }
     
-    // MARK: - Sections
+    // MARK: - Title Section
     
     private var titleSection: some View {
         VStack(alignment: .leading, spacing: Design.Spacing.sm) {
-            sectionHeader("TASK")
+            sectionHeader("WHAT'S THE TASK?")
             
             VStack(spacing: 0) {
-                TextField("What do you need to do?", text: $title)
+                TextField("Task name", text: $title)
                     .font(Design.Typography.body)
-                    .padding(Design.Spacing.md)
+                    .fontWeight(.medium)
+                    .focused($isTitleFocused)
+                    .padding(Design.Spacing.lg)
                 
                 Divider()
-                    .padding(.leading, Design.Spacing.md)
+                    .padding(.horizontal, Design.Spacing.lg)
                 
-                TextField("Notes (optional)", text: $description, axis: .vertical)
+                TextField("Add notes...", text: $description, axis: .vertical)
                     .font(Design.Typography.body)
-                    .lineLimit(3...6)
-                    .padding(Design.Spacing.md)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(2...5)
+                    .padding(Design.Spacing.lg)
             }
-            .background(Color(.systemBackground))
-            .clipShape(RoundedRectangle(cornerRadius: Design.Radius.md))
+            .background(CloudoTheme.cardBackground)
+            .clipShape(RoundedRectangle(cornerRadius: Design.Radius.lg, style: .continuous))
         }
     }
+    
+    // MARK: - Category Section
     
     private var categorySection: some View {
         VStack(alignment: .leading, spacing: Design.Spacing.sm) {
@@ -146,12 +163,15 @@ struct TaskFormView: View {
                             .frame(width: 12, height: 12)
                         
                         Text(category.name ?? "")
+                            .font(Design.Typography.body)
                             .foregroundStyle(.primary)
                     } else {
                         Image(systemName: "tag")
+                            .font(.system(size: 16))
                             .foregroundStyle(.secondary)
                         
                         Text("Select category")
+                            .font(Design.Typography.body)
                             .foregroundStyle(.secondary)
                     }
                     
@@ -160,7 +180,7 @@ struct TaskFormView: View {
                     if selectedCategory != nil {
                         Button(action: { selectedCategory = nil }) {
                             Image(systemName: "xmark.circle.fill")
-                                .foregroundStyle(.secondary)
+                                .foregroundStyle(.tertiary)
                         }
                     } else {
                         Image(systemName: "chevron.right")
@@ -168,14 +188,15 @@ struct TaskFormView: View {
                             .foregroundStyle(.tertiary)
                     }
                 }
-                .font(Design.Typography.body)
-                .padding(Design.Spacing.md)
-                .background(Color(.systemBackground))
-                .clipShape(RoundedRectangle(cornerRadius: Design.Radius.md))
+                .padding(Design.Spacing.lg)
+                .background(CloudoTheme.cardBackground)
+                .clipShape(RoundedRectangle(cornerRadius: Design.Radius.lg, style: .continuous))
             }
             .buttonStyle(PlainButtonStyle())
         }
     }
+    
+    // MARK: - Priority Section
     
     private var prioritySection: some View {
         VStack(alignment: .leading, spacing: Design.Spacing.sm) {
@@ -190,8 +211,11 @@ struct TaskFormView: View {
     }
     
     private func priorityButton(_ priority: Priority) -> some View {
-        Button(action: {
-            withAnimation(Design.Animation.quick) {
+        let isSelected = selectedPriority == priority
+        let color = priorityColor(for: priority)
+        
+        return Button(action: {
+            withAnimation(Design.Animation.snappy) {
                 selectedPriority = priority
             }
             if appState.hapticsEnabled {
@@ -200,38 +224,59 @@ struct TaskFormView: View {
         }) {
             VStack(spacing: Design.Spacing.xs) {
                 Image(systemName: priority.icon)
-                    .font(.system(size: 18))
-                    .foregroundColor(selectedPriority == priority ? .white : priority.fallbackColor)
+                    .font(.system(size: 18, weight: .semibold))
                 
                 Text(priority.name)
                     .font(Design.Typography.caption)
-                    .foregroundColor(selectedPriority == priority ? .white : .primary)
+                    .fontWeight(.medium)
             }
+            .foregroundColor(isSelected ? .white : color)
             .frame(maxWidth: .infinity)
             .padding(.vertical, Design.Spacing.md)
             .background(
-                RoundedRectangle(cornerRadius: Design.Radius.md)
-                    .fill(selectedPriority == priority ? priority.fallbackColor : Color(.systemBackground))
+                RoundedRectangle(cornerRadius: Design.Radius.md, style: .continuous)
+                    .fill(isSelected ? color : CloudoTheme.cardBackground)
             )
+            .shadow(color: isSelected ? color.opacity(0.3) : .clear, radius: 8, x: 0, y: 4)
         }
         .buttonStyle(PlainButtonStyle())
     }
+    
+    private func priorityColor(for priority: Priority) -> Color {
+        switch priority {
+        case .none: return .secondary
+        case .low: return CloudoTheme.priorityLow
+        case .medium: return CloudoTheme.priorityMedium
+        case .high: return CloudoTheme.priorityHigh
+        }
+    }
+    
+    // MARK: - Reminder Section
     
     private var reminderSection: some View {
         VStack(alignment: .leading, spacing: Design.Spacing.sm) {
             sectionHeader("REMINDER")
             
             Button(action: {
-                tempDate = reminderDate ?? Date()
+                tempDate = reminderDate ?? Date().addingTimeInterval(3600) // Default to 1 hour from now
                 showDatePicker = true
             }) {
                 HStack {
-                    Image(systemName: reminderDate == nil ? "bell" : "bell.fill")
-                        .foregroundColor(reminderDate == nil ? .secondary : Color.blue)
+                    ZStack {
+                        Circle()
+                            .fill(reminderDate != nil ? CloudoTheme.primary.opacity(0.15) : Color(.systemGray6))
+                            .frame(width: 36, height: 36)
+                        
+                        Image(systemName: reminderDate == nil ? "bell" : "bell.fill")
+                            .font(.system(size: 16))
+                            .foregroundColor(reminderDate != nil ? CloudoTheme.primary : .secondary)
+                    }
                     
                     if let date = reminderDate {
                         VStack(alignment: .leading, spacing: 2) {
                             Text(date, style: .date)
+                                .font(Design.Typography.callout)
+                                .fontWeight(.medium)
                                 .foregroundStyle(.primary)
                             Text(date, style: .time)
                                 .font(Design.Typography.caption)
@@ -239,6 +284,7 @@ struct TaskFormView: View {
                         }
                     } else {
                         Text("Add reminder")
+                            .font(Design.Typography.body)
                             .foregroundStyle(.secondary)
                     }
                     
@@ -250,7 +296,7 @@ struct TaskFormView: View {
                             selectedRecurrence = .none
                         }) {
                             Image(systemName: "xmark.circle.fill")
-                                .foregroundStyle(.secondary)
+                                .foregroundStyle(.tertiary)
                         }
                     } else {
                         Image(systemName: "chevron.right")
@@ -258,14 +304,15 @@ struct TaskFormView: View {
                             .foregroundStyle(.tertiary)
                     }
                 }
-                .font(Design.Typography.body)
-                .padding(Design.Spacing.md)
-                .background(Color(.systemBackground))
-                .clipShape(RoundedRectangle(cornerRadius: Design.Radius.md))
+                .padding(Design.Spacing.lg)
+                .background(CloudoTheme.cardBackground)
+                .clipShape(RoundedRectangle(cornerRadius: Design.Radius.lg, style: .continuous))
             }
             .buttonStyle(PlainButtonStyle())
         }
     }
+    
+    // MARK: - Recurrence Section
     
     private var recurrenceSection: some View {
         VStack(alignment: .leading, spacing: Design.Spacing.sm) {
@@ -282,8 +329,10 @@ struct TaskFormView: View {
     }
     
     private func recurrenceChip(_ recurrence: Recurrence) -> some View {
-        Button(action: {
-            withAnimation(Design.Animation.quick) {
+        let isSelected = selectedRecurrence == recurrence
+        
+        return Button(action: {
+            withAnimation(Design.Animation.snappy) {
                 selectedRecurrence = recurrence
             }
             if appState.hapticsEnabled {
@@ -292,38 +341,42 @@ struct TaskFormView: View {
         }) {
             HStack(spacing: Design.Spacing.xs) {
                 Image(systemName: recurrence.icon)
-                    .font(.system(size: 12))
+                    .font(.system(size: 12, weight: .semibold))
                 
                 Text(recurrence.name)
                     .font(Design.Typography.caption)
+                    .fontWeight(.medium)
             }
+            .foregroundColor(isSelected ? .white : .primary)
             .padding(.horizontal, Design.Spacing.md)
             .padding(.vertical, Design.Spacing.sm)
             .background(
                 Capsule()
-                    .fill(selectedRecurrence == recurrence ? Color.blue : Color(.systemBackground))
+                    .fill(isSelected ? CloudoTheme.primary : CloudoTheme.cardBackground)
             )
-            .foregroundColor(selectedRecurrence == recurrence ? .white : .primary)
+            .shadow(color: isSelected ? CloudoTheme.primary.opacity(0.3) : .clear, radius: 6, x: 0, y: 3)
         }
         .buttonStyle(PlainButtonStyle())
     }
     
-    // MARK: - Sheets
+    // MARK: - Date Picker Sheet
     
     private var datePickerSheet: some View {
         NavigationStack {
-            VStack(spacing: Design.Spacing.lg) {
+            VStack(spacing: 0) {
                 DatePicker(
-                    "Select date and time",
+                    "",
                     selection: $tempDate,
                     in: Date()...,
                     displayedComponents: [.date, .hourAndMinute]
                 )
                 .datePickerStyle(.graphical)
+                .tint(CloudoTheme.primary)
                 .padding()
                 
                 Spacer()
             }
+            .background(CloudoTheme.background)
             .navigationTitle("Set Reminder")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -331,6 +384,7 @@ struct TaskFormView: View {
                     Button("Cancel") {
                         showDatePicker = false
                     }
+                    .foregroundColor(.secondary)
                 }
                 
                 ToolbarItem(placement: .confirmationAction) {
@@ -338,12 +392,15 @@ struct TaskFormView: View {
                         reminderDate = tempDate
                         showDatePicker = false
                     }
-                    .fontWeight(.semibold)
+                    .fontWeight(.bold)
+                    .foregroundColor(CloudoTheme.primary)
                 }
             }
         }
         .presentationDetents([.medium, .large])
     }
+    
+    // MARK: - Category Picker Sheet
     
     private var categoryPickerSheet: some View {
         NavigationStack {
@@ -353,24 +410,27 @@ struct TaskFormView: View {
                         selectedCategory = category
                         showCategoryPicker = false
                     }) {
-                        HStack {
+                        HStack(spacing: Design.Spacing.md) {
                             Circle()
                                 .fill(category.color)
-                                .frame(width: 12, height: 12)
+                                .frame(width: 16, height: 16)
                             
                             Text(category.name ?? "")
+                                .font(Design.Typography.body)
                                 .foregroundStyle(.primary)
                             
                             Spacer()
                             
                             if selectedCategory?.id == category.id {
-                                Image(systemName: "checkmark")
-                                    .foregroundColor(Color.blue)
+                                Image(systemName: "checkmark.circle.fill")
+                                    .foregroundColor(CloudoTheme.primary)
                             }
                         }
+                        .padding(.vertical, Design.Spacing.xs)
                     }
                 }
             }
+            .listStyle(.insetGrouped)
             .navigationTitle("Select Category")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -378,6 +438,7 @@ struct TaskFormView: View {
                     Button("Cancel") {
                         showCategoryPicker = false
                     }
+                    .foregroundColor(.secondary)
                 }
             }
         }
@@ -388,13 +449,12 @@ struct TaskFormView: View {
     
     private func sectionHeader(_ title: String) -> some View {
         Text(title)
-            .font(Design.Typography.caption)
-            .fontWeight(.semibold)
+            .font(Design.Typography.caption2)
             .foregroundStyle(.secondary)
             .padding(.leading, Design.Spacing.xs)
     }
     
-    // MARK: - Actions
+    // MARK: - Save Action
     
     private func saveTask() {
         let taskToSave: Task
@@ -422,7 +482,6 @@ struct TaskFormView: View {
         do {
             try viewContext.save()
             
-            // Handle notifications
             if let _ = reminderDate, !taskToSave.isCompleted {
                 NotificationService.shared.requestAuthorization { granted in
                     if granted {
@@ -452,16 +511,5 @@ struct TaskFormView: View {
 #Preview("New Task") {
     TaskFormView()
         .environment(\.managedObjectContext, PersistenceController.preview.container.viewContext)
-        .environmentObject(AppState())
-}
-
-#Preview("Edit Task") {
-    let context = PersistenceController.preview.container.viewContext
-    let task = Task(context: context)
-    task.title = "Sample Task"
-    task.priority = 2
-    
-    return TaskFormView(task: task)
-        .environment(\.managedObjectContext, context)
         .environmentObject(AppState())
 }

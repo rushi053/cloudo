@@ -2,7 +2,7 @@
 //  MainTabView.swift
 //  Cloudo
 //
-//  Main tab navigation with custom tab bar
+//  Modern tab navigation with beautiful floating action button
 //
 
 import SwiftUI
@@ -13,6 +13,7 @@ struct MainTabView: View {
     
     @State private var selectedTab: Tab = .tasks
     @State private var showAddTask = false
+    @State private var addButtonRotation: Double = 0
     @EnvironmentObject private var appState: AppState
     
     // MARK: - Tab Definition
@@ -32,7 +33,7 @@ struct MainTabView: View {
         
         var icon: String {
             switch self {
-            case .tasks: return "checklist"
+            case .tasks: return "list.bullet.rectangle"
             case .completed: return "checkmark.circle"
             case .settings: return "gearshape"
             }
@@ -40,7 +41,7 @@ struct MainTabView: View {
         
         var selectedIcon: String {
             switch self {
-            case .tasks: return "checklist"
+            case .tasks: return "list.bullet.rectangle.fill"
             case .completed: return "checkmark.circle.fill"
             case .settings: return "gearshape.fill"
             }
@@ -50,22 +51,43 @@ struct MainTabView: View {
     // MARK: - Body
     
     var body: some View {
-        ZStack(alignment: .bottom) {
-            // Content
-            TabView(selection: $selectedTab) {
-                TaskListView(showCompleted: false)
-                    .tag(Tab.tasks)
-                
-                TaskListView(showCompleted: true)
-                    .tag(Tab.completed)
-                
-                SettingsView()
-                    .tag(Tab.settings)
-            }
-            .tabViewStyle(.page(indexDisplayMode: .never))
+        ZStack {
+            // Background
+            CloudoTheme.background
+                .ignoresSafeArea()
             
-            // Custom Tab Bar
-            customTabBar
+            // Content
+            VStack(spacing: 0) {
+                // Tab content
+                TabView(selection: $selectedTab) {
+                    TaskListView(showCompleted: false)
+                        .tag(Tab.tasks)
+                    
+                    TaskListView(showCompleted: true)
+                        .tag(Tab.completed)
+                    
+                    SettingsView()
+                        .tag(Tab.settings)
+                }
+                .tabViewStyle(.page(indexDisplayMode: .never))
+            }
+            
+            // Custom Tab Bar overlay
+            VStack {
+                Spacer()
+                customTabBar
+            }
+            
+            // Floating Action Button
+            VStack {
+                Spacer()
+                HStack {
+                    Spacer()
+                    floatingAddButton
+                        .padding(.trailing, Design.Spacing.xl)
+                        .padding(.bottom, 100)
+                }
+            }
         }
         .ignoresSafeArea(.keyboard)
         .sheet(isPresented: $showAddTask) {
@@ -77,24 +99,16 @@ struct MainTabView: View {
     
     private var customTabBar: some View {
         HStack(spacing: 0) {
-            // Tasks tab
-            tabButton(for: .tasks)
-            
-            // Add button
-            addButton
-            
-            // Completed tab
-            tabButton(for: .completed)
-            
-            // Settings tab
-            tabButton(for: .settings)
+            ForEach(Tab.allCases, id: \.self) { tab in
+                tabButton(for: tab)
+            }
         }
         .padding(.horizontal, Design.Spacing.lg)
         .padding(.top, Design.Spacing.md)
-        .padding(.bottom, Design.Spacing.xl)
+        .padding(.bottom, Design.Spacing.xxl)
         .background(
-            Rectangle()
-                .fill(.ultraThinMaterial)
+            CloudoTheme.cardBackground
+                .shadow(color: Color.black.opacity(0.08), radius: 20, x: 0, y: -5)
                 .ignoresSafeArea()
         )
     }
@@ -109,44 +123,67 @@ struct MainTabView: View {
             }
         }) {
             VStack(spacing: Design.Spacing.xs) {
-                Image(systemName: selectedTab == tab ? tab.selectedIcon : tab.icon)
-                    .font(.system(size: 22))
-                    .symbolEffect(.bounce, value: selectedTab == tab)
+                ZStack {
+                    // Background pill for selected state
+                    if selectedTab == tab {
+                        Capsule()
+                            .fill(CloudoTheme.primary.opacity(0.15))
+                            .frame(width: 56, height: 32)
+                    }
+                    
+                    Image(systemName: selectedTab == tab ? tab.selectedIcon : tab.icon)
+                        .font(.system(size: 20, weight: .medium))
+                        .foregroundColor(selectedTab == tab ? CloudoTheme.primary : .secondary)
+                        .symbolEffect(.bounce, value: selectedTab == tab)
+                }
+                .frame(height: 32)
                 
                 Text(tab.title)
                     .font(Design.Typography.caption2)
+                    .foregroundColor(selectedTab == tab ? CloudoTheme.primary : .secondary)
             }
-            .foregroundStyle(selectedTab == tab ? .primary : .secondary)
             .frame(maxWidth: .infinity)
         }
         .buttonStyle(PlainButtonStyle())
     }
     
-    private var addButton: some View {
+    // MARK: - Floating Add Button
+    
+    private var floatingAddButton: some View {
         Button(action: {
+            withAnimation(Design.Animation.bouncy) {
+                addButtonRotation += 90
+            }
             showAddTask = true
             if appState.hapticsEnabled {
                 HapticService.shared.impact(.medium)
             }
         }) {
             ZStack {
+                // Outer glow
                 Circle()
-                    .fill(
-                        LinearGradient(
-                            colors: [Color.blue, Color.blue.opacity(0.8)],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
-                    .frame(width: 56, height: 56)
-                    .shadow(color: Color.blue.opacity(0.3), radius: 8, y: 4)
+                    .fill(CloudoTheme.primaryGradient)
+                    .frame(width: 60, height: 60)
+                    .shadow(color: CloudoTheme.primary.opacity(0.4), radius: 12, x: 0, y: 6)
                 
+                // Icon
                 Image(systemName: "plus")
-                    .font(.system(size: 24, weight: .semibold))
+                    .font(.system(size: 26, weight: .semibold))
                     .foregroundColor(.white)
+                    .rotationEffect(.degrees(addButtonRotation))
             }
         }
-        .offset(y: -Design.Spacing.lg)
+        .buttonStyle(FABButtonStyle())
+    }
+}
+
+// MARK: - FAB Button Style
+
+struct FABButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .scaleEffect(configuration.isPressed ? 0.9 : 1.0)
+            .animation(Design.Animation.snappy, value: configuration.isPressed)
     }
 }
 

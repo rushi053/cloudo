@@ -2,7 +2,7 @@
 //  Priority.swift
 //  Cloudo
 //
-//  Task priority levels with associated colors and icons
+//  Task priority levels with vibrant colors
 //
 
 import SwiftUI
@@ -36,19 +36,14 @@ enum Priority: Int16, CaseIterable, Identifiable {
     var color: Color {
         switch self {
         case .none: return Color(.systemGray4)
-        case .low: return Color("LowPriority")
-        case .medium: return Color("MediumPriority")
-        case .high: return Color("HighPriority")
+        case .low: return CloudoTheme.priorityLow
+        case .medium: return CloudoTheme.priorityMedium
+        case .high: return CloudoTheme.priorityHigh
         }
     }
     
-    /// Fallback colors if asset colors aren't set
+    /// Fallback colors - now the same as main colors
     var fallbackColor: Color {
-        switch self {
-        case .none: return Color(.systemGray4)
-        case .low: return Color(red: 0.45, green: 0.75, blue: 0.88) // Soft blue
-        case .medium: return Color(red: 1.0, green: 0.76, blue: 0.48) // Warm orange
-        case .high: return Color(red: 0.96, green: 0.49, blue: 0.49) // Soft red
-        }
+        color
     }
 }
