@@ -1,5 +1,4 @@
 import CoreData
-import WidgetKit
 import Foundation
 
 struct PersistenceController {
@@ -11,11 +10,10 @@ struct PersistenceController {
     init(inMemory: Bool = false) {
         container = NSPersistentContainer(name: "Cloudo")
         
-        // Set up shared container for App Group to enable widget access
+        // Set up shared container for App Group
         if let storeURL = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: PersistenceController.appGroupIdentifier) {
             let storeDescription = NSPersistentStoreDescription(url: storeURL.appendingPathComponent("Cloudo.sqlite"))
             
-            // Enable history tracking for widgets
             storeDescription.setOption(true as NSNumber, forKey: NSPersistentHistoryTrackingKey)
             storeDescription.setOption(true as NSNumber, forKey: NSPersistentStoreRemoteChangeNotificationPostOptionKey)
             
@@ -36,12 +34,6 @@ struct PersistenceController {
         // Configure the view context for better performance and automatic merging
         container.viewContext.automaticallyMergesChangesFromParent = true
         container.viewContext.mergePolicy = NSMergeByPropertyObjectTrumpMergePolicy
-        
-        // Set up to refresh widgets when data changes
-        NotificationCenter.default.addObserver(forName: .NSPersistentStoreRemoteChange, object: nil, queue: .main) { _ in
-            // Refresh widgets when Core Data changes
-            WidgetCenter.shared.reloadAllTimelines()
-        }
     }
     
     static var preview: PersistenceController = {
@@ -92,60 +84,4 @@ struct PersistenceController {
         }
         return result
     }()
-    
-    // Save tasks to UserDefaults for widget access
-    func saveTasksForWidget() {
-        let context = container.viewContext
-        let fetchRequest: NSFetchRequest<Task> = Task.fetchRequest()
-        
-        // Get today's date range
-        let calendar = Calendar.current
-        let today = calendar.startOfDay(for: Date())
-        let tomorrow = calendar.date(byAdding: .day, value: 1, to: today)!
-        
-        // Fetch tasks that are due today or have no due date and are not completed
-        let predicate = NSPredicate(format: "(reminderDate >= %@ AND reminderDate < %@) OR (reminderDate == nil AND completed == NO)", today as NSDate, tomorrow as NSDate)
-        fetchRequest.predicate = predicate
-        
-        // Sort by priority (high to low) and then by title
-        fetchRequest.sortDescriptors = [
-            NSSortDescriptor(key: "priority", ascending: false),
-            NSSortDescriptor(key: "title", ascending: true)
-        ]
-        
-        do {
-            let tasks = try context.fetch(fetchRequest)
-            
-            // Convert tasks to TaskViewModel objects
-            let taskViewModels = tasks.map { task -> TaskViewModel in
-                return TaskViewModel(
-                    id: task.id ?? UUID(),
-                    title: task.title ?? "Untitled Task",
-                    priority: Int(task.priority),
-                    completed: task.completed,
-                    category: task.category?.name ?? "",
-                    reminderDate: task.reminderDate
-                )
-            }
-            
-            // Encode to JSON data
-            if let encodedData = try? JSONEncoder().encode(taskViewModels) {
-                // Save to UserDefaults
-                if let sharedDefaults = UserDefaults(suiteName: PersistenceController.appGroupIdentifier) {
-                    sharedDefaults.set(encodedData, forKey: "widgetTasks")
-                    sharedDefaults.synchronize()
-                    print("Saved \(taskViewModels.count) tasks to UserDefaults for widget")
-                } else {
-                    print("Failed to access shared UserDefaults")
-                }
-            } else {
-                print("Failed to encode tasks for widget")
-            }
-            
-            // Refresh widgets
-            WidgetCenter.shared.reloadAllTimelines()
-        } catch {
-            print("Error saving tasks for widget: \(error)")
-        }
-    }
 } 

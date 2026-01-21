@@ -35,13 +35,17 @@ struct TaskRow: View {
                                 }
                             }
                             
-                            task.completed.toggle()
-                            
-                            if task.completed && task.isRecurring {
-                                // Handle recurring task completion
+                            // For recurring tasks, we don't mark as completed
+                            // Instead, we just handle the completion and schedule next occurrence
+                            if task.isRecurring {
                                 NotificationManager.shared.handleTaskCompletion(task: task)
                                 HapticManager.shared.successFeedback()
                             } else {
+                                // For non-recurring tasks, toggle completion status
+                                task.completed.toggle()
+                                if task.completed {
+                                    NotificationManager.shared.cancelNotification(for: task)
+                                }
                                 HapticManager.shared.successFeedback()
                             }
                         }
@@ -122,31 +126,34 @@ struct TaskRow: View {
                             
                             // Reminder time if available
                             if let reminderDate = task.reminderDate {
-                                HStack(spacing: 4) {
-                                    Image(systemName: task.isRecurring ? "arrow.triangle.2.circlepath" : "clock")
-                                        .font(.system(size: 10))
-                                    Text(reminderDate, style: .time)
-                                        .font(.system(size: 12))
-                                    if task.isRecurring {
-                                        Text("•")
+                                // Only show time if it's a recurring task or if the time hasn't passed yet
+                                if task.isRecurring || reminderDate > Date() {
+                                    HStack(spacing: 4) {
+                                        Image(systemName: task.isRecurring ? "arrow.triangle.2.circlepath" : "clock")
                                             .font(.system(size: 10))
-                                            .foregroundColor(Theme.primaryPastel)
-                                        Text(RecurrenceType(rawValue: Int(task.recurrenceType))?.shortName ?? "")
-                                            .font(.system(size: 10))
-                                            .foregroundColor(Theme.primaryPastel)
+                                        Text(reminderDate, style: .time)
+                                            .font(.system(size: 12))
+                                        if task.isRecurring {
+                                            Text("•")
+                                                .font(.system(size: 10))
+                                                .foregroundColor(Theme.primaryPastel)
+                                            Text(RecurrenceType(rawValue: Int(task.recurrenceType))?.shortName ?? "")
+                                                .font(.system(size: 10))
+                                                .foregroundColor(Theme.primaryPastel)
+                                        }
                                     }
+                                    .foregroundColor(themeManager.isDarkMode ? 
+                                        themeManager.secondaryColor.opacity(0.6) : 
+                                        themeManager.secondaryColor.opacity(0.7))
+                                    .padding(.vertical, 2)
+                                    .padding(.horizontal, 6)
+                                    .background(
+                                        RoundedRectangle(cornerRadius: 4)
+                                            .fill(task.isRecurring ? 
+                                                  Theme.primaryPastel.opacity(0.1) : 
+                                                  themeManager.secondaryColor.opacity(0.1))
+                                    )
                                 }
-                                .foregroundColor(themeManager.isDarkMode ? 
-                                    themeManager.secondaryColor.opacity(0.6) : 
-                                    themeManager.secondaryColor.opacity(0.7))
-                                .padding(.vertical, 2)
-                                .padding(.horizontal, 6)
-                                .background(
-                                    RoundedRectangle(cornerRadius: 4)
-                                        .fill(task.isRecurring ? 
-                                              Theme.primaryPastel.opacity(0.1) : 
-                                              themeManager.secondaryColor.opacity(0.1))
-                                )
                             }
                             
                             // Spacer to push content to the left
@@ -159,11 +166,16 @@ struct TaskRow: View {
                     
                     // Right side controls - moved bell icon to be separate from chevron
                     HStack(spacing: 12) {
-                        // Reminder cancel button if reminder exists
-                        if task.reminderDate != nil {
+                        // Reminder cancel button if reminder exists and is active/pending
+                        if let reminderDate = task.reminderDate, 
+                           (task.isRecurring || reminderDate > Date()) {
                             Button(action: {
                                 withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
                                     task.reminderDate = nil
+                                    task.isRecurring = false
+                                    task.recurrenceType = 0 // Reset to none
+                                    NotificationManager.shared.cancelNotification(for: task)
+                                    try? viewContext.save()
                                 }
                             }) {
                                 Image(systemName: "bell.slash.fill")
@@ -279,7 +291,8 @@ struct TaskRow: View {
         withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
             // Cancel any pending notifications for this task before deleting it
             if let taskId = task.id?.uuidString {
-                UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: [taskId])
+                let identifiersToRemove = [taskId, "\(taskId)_initial"]
+                UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: identifiersToRemove)
             }
             
             viewContext.delete(task)
@@ -797,9 +810,6 @@ struct EditTaskView: View {
         
         do {
             try viewContext.save()
-            
-            // Save tasks to UserDefaults for widget access
-            PersistenceController.shared.saveTasksForWidget()
             
             // Handle notifications
             if reminderDate != nil && !task.completed {

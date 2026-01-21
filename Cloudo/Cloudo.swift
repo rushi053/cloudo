@@ -7,13 +7,14 @@
 
 import SwiftUI
 import UIKit
-import WidgetKit
 import CoreData
+import BackgroundTasks
 
 @main
 struct CloudoApp: App {
+    @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
     let persistenceController = PersistenceController.shared
-    @StateObject private var urlHandler = URLHandler()
+    @StateObject var onboardingManager = OnboardingManager.shared
     
     init() {
         // Lock orientation to portrait at app launch
@@ -61,78 +62,83 @@ struct CloudoApp: App {
         } else {
             print("Failed to access App Group container. Check entitlements and provisioning profile.")
         }
-        
-        // Save tasks for widget on app launch
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-            PersistenceController.shared.saveTasksForWidget()
-            print("Saved tasks for widget on app launch")
-        }
     }
     
     var body: some Scene {
         WindowGroup {
-            ContentView()
-                .environment(\.managedObjectContext, persistenceController.container.viewContext)
-                .modifier(OrientationLockModifier())
-                .environmentObject(urlHandler)
-                .onOpenURL { url in
-                    urlHandler.handleURL(url, context: persistenceController.container.viewContext)
-                }
-                .onReceive(NotificationCenter.default.publisher(for: .NSManagedObjectContextDidSave)) { _ in
-                    // Update widget data when Core Data changes
-                    PersistenceController.shared.saveTasksForWidget()
-                    print("Updated widget data due to Core Data changes")
-                }
+            if onboardingManager.hasCompletedOnboarding {
+                ContentView()
+                    .environment(\.managedObjectContext, persistenceController.container.viewContext)
+                    .modifier(OrientationLockModifier())
+                    .onReceive(NotificationCenter.default.publisher(for: UIApplication.willEnterForegroundNotification)) { _ in
+                        // Check for missed recurring tasks when app becomes active
+                        NotificationManager.shared.checkAndUpdateMissedRecurringTasks(context: persistenceController.container.viewContext)
+                    }
+                    .task {
+                        // Check for missed recurring tasks on app launch
+                        NotificationManager.shared.checkAndUpdateMissedRecurringTasks(context: persistenceController.container.viewContext)
+                    }
+            } else {
+                WelcomeAnimationView()
+            }
         }
     }
 }
 
-// URL Handler for widget interactions
-class URLHandler: ObservableObject {
-    @Published var lastCompletedTaskId: UUID?
-    
-    func handleURL(_ url: URL, context: NSManagedObjectContext) {
-        guard url.scheme == "cloudo" else { return }
+class AppDelegate: NSObject, UIApplicationDelegate {
+    func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey : Any]? = nil) -> Bool {
+        // Register background tasks
+        registerBackgroundTasks()
         
-        switch url.host {
-        case "complete-task":
-            if let taskIdString = url.pathComponents.last, 
-               let taskId = UUID(uuidString: taskIdString) {
-                completeTask(with: taskId, context: context)
-            }
-        default:
-            break
+        // We'll request notification permissions during onboarding instead of at app launch
+        // This gives the user context for why we need notifications
+        
+        return true
+    }
+    
+    func applicationDidEnterBackground(_ application: UIApplication) {
+        scheduleBackgroundProcessing()
+    }
+    
+    private func registerBackgroundTasks() {
+        BGTaskScheduler.shared.register(forTaskWithIdentifier: "com.cloudo.refreshTasks", using: nil) { task in
+            self.handleAppRefresh(task: task as! BGAppRefreshTask)
         }
     }
     
-    private func completeTask(with id: UUID, context: NSManagedObjectContext) {
-        // Create the fetch request
-        let fetchRequest = NSFetchRequest<NSFetchRequestResult>(entityName: "Task")
-        fetchRequest.predicate = NSPredicate(format: "id == %@", id as CVarArg)
+    private func scheduleBackgroundProcessing() {
+        let request = BGAppRefreshTaskRequest(identifier: "com.cloudo.refreshTasks")
+        request.earliestBeginDate = Date(timeIntervalSinceNow: 15 * 60) // 15 minutes from now
         
         do {
-            // Execute the fetch request
-            if let results = try context.fetch(fetchRequest) as? [NSManagedObject], let task = results.first {
-                // Update the task
-                task.setValue(true, forKey: "completed")
-                
-                // Handle recurring tasks if needed
-                if let isRecurring = task.value(forKey: "isRecurring") as? Bool, isRecurring {
-                    // Use the NotificationManager without casting to Task
-                    if let taskId = task.value(forKey: "id") as? UUID {
-                        NotificationManager.shared.handleTaskCompletion(taskId: taskId)
-                    }
-                }
-                
-                // Save the context
-                try context.save()
-                lastCompletedTaskId = id
-                
-                // Refresh widgets
-                WidgetCenter.shared.reloadAllTimelines()
-            }
+            try BGTaskScheduler.shared.submit(request)
+            print("Background task scheduled successfully")
         } catch {
-            print("Error completing task: \(error)")
+            print("Could not schedule background task: \(error)")
         }
+    }
+    
+    private func handleAppRefresh(task: BGAppRefreshTask) {
+        // Create a task to ensure that the background task gets time to complete
+        let queue = OperationQueue()
+        queue.maxConcurrentOperationCount = 1
+        
+        let operation = BlockOperation {
+            let context = PersistenceController.shared.container.viewContext
+            NotificationManager.shared.checkAndUpdateMissedRecurringTasks(context: context)
+        }
+        
+        // Set up the completion handler for the task
+        task.expirationHandler = {
+            queue.cancelAllOperations()
+        }
+        
+        operation.completionBlock = {
+            // Schedule the next background refresh
+            self.scheduleBackgroundProcessing()
+            task.setTaskCompleted(success: !operation.isCancelled)
+        }
+        
+        queue.addOperation(operation)
     }
 }

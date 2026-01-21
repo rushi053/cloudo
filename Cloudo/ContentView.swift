@@ -19,6 +19,7 @@ struct ContentView: View {
     @State private var selectedCategory: Category?
     @State private var showingSortOptions = false
     @State private var selectedSortOption: TaskSortOption = .createdNewest
+    @State private var showingDataManagement = false
     
     // Add ToastManager
     @StateObject private var toastManager = ToastManager()
@@ -391,6 +392,27 @@ struct ContentView: View {
                 
                 CustomTabBar(selectedTab: $selectedTab)
                     .ignoresSafeArea(.keyboard, edges: .bottom)
+                
+                // Floating Add Button
+                VStack {
+                    Spacer()
+                    HStack {
+                        Spacer()
+                        Button(action: { 
+                            withAnimation {
+                                showingAddTask = true
+                                HapticManager.shared.successFeedback()
+                            }
+                        }) {
+                            Image(systemName: "plus.circle.fill")
+                                .font(.system(size: 56))
+                                .foregroundColor(themeManager.textColor)
+                                .shadow(color: Theme.primaryPastel.opacity(0.3), radius: 4, x: 0, y: 2)
+                        }
+                        .padding(.trailing, 20)
+                        .padding(.bottom, 80) // Position above tab bar
+                    }
+                }
             }
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -412,16 +434,18 @@ struct ContentView: View {
                 }
                 
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button(action: { 
-                        withAnimation {
-                            showingAddTask = true
-                            HapticManager.shared.successFeedback()
+                    HStack(spacing: 16) {
+                        Button(action: { 
+                            withAnimation {
+                                showingDataManagement = true
+                                HapticManager.shared.successFeedback()
+                            }
+                        }) {
+                            Image(systemName: "gearshape.fill")
+                                .font(.system(size: 20))
+                                .foregroundColor(themeManager.textColor)
+                                .shadow(color: Theme.primaryPastel.opacity(0.3), radius: 4, x: 0, y: 2)
                         }
-                    }) {
-                        Image(systemName: "plus.circle.fill")
-                            .font(.system(size: 24))
-                            .foregroundColor(themeManager.textColor)
-                            .shadow(color: Theme.primaryPastel.opacity(0.3), radius: 4, x: 0, y: 2)
                     }
                 }
             }
@@ -434,6 +458,13 @@ struct ContentView: View {
             }
             .sheet(isPresented: $showingCategories) {
                 CategoriesView()
+                    .presentationDetents([.medium, .large])
+                    .presentationDragIndicator(.visible)
+                    .presentationBackground(themeManager.sheetBackgroundColor)
+                    .presentationCornerRadius(16)
+            }
+            .sheet(isPresented: $showingDataManagement) {
+                DataManagementView()
                     .presentationDetents([.medium, .large])
                     .presentationDragIndicator(.visible)
                     .presentationBackground(themeManager.sheetBackgroundColor)

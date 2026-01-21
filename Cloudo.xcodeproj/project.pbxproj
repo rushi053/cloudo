@@ -6,12 +6,6 @@
 	objectVersion = 77;
 	objects = {
 
-/* Begin PBXBuildFile section */
-		B2DC3A842D7DA3430092E500 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B2DC3A832D7DA3430092E500 /* WidgetKit.framework */; };
-		B2DC3A862D7DA3430092E500 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B2DC3A852D7DA3430092E500 /* SwiftUI.framework */; };
-		B2DC3A972D7DA3430092E500 /* CloudoWidgetsExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = B2DC3A812D7DA3430092E500 /* CloudoWidgetsExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
-/* End PBXBuildFile section */
-
 /* Begin PBXContainerItemProxy section */
 		B2B33A4E2D7A165D0049B6C8 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -27,13 +21,6 @@
 			remoteGlobalIDString = B2B33A372D7A165C0049B6C8;
 			remoteInfo = Cloudo;
 		};
-		B2DC3A952D7DA3430092E500 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = B2B33A302D7A165C0049B6C8 /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = B2DC3A802D7DA3430092E500;
-			remoteInfo = CloudoWidgetsExtension;
-		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -43,7 +30,6 @@
 			dstPath = "";
 			dstSubfolderSpec = 13;
 			files = (
-				B2DC3A972D7DA3430092E500 /* CloudoWidgetsExtension.appex in Embed Foundation Extensions */,
 			);
 			name = "Embed Foundation Extensions";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -54,24 +40,26 @@
 		B2B33A382D7A165C0049B6C8 /* Cloudo.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Cloudo.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		B2B33A4D2D7A165D0049B6C8 /* CloudoTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CloudoTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		B2B33A572D7A165D0049B6C8 /* CloudoUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CloudoUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		B2DC3A812D7DA3430092E500 /* CloudoWidgetsExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = CloudoWidgetsExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		B2DC3A832D7DA3430092E500 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
 		B2DC3A852D7DA3430092E500 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		B2DC3A9B2D7DA3430092E500 /* Exceptions for "CloudoWidgets" folder in "CloudoWidgetsExtension" target */ = {
+		B24E9C932DA39E0E003FFBB6 /* Exceptions for "Cloudo" folder in "Cloudo" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
 			);
-			target = B2DC3A802D7DA3430092E500 /* CloudoWidgetsExtension */;
+			target = B2B33A372D7A165C0049B6C8 /* Cloudo */;
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		B2B33A3A2D7A165C0049B6C8 /* Cloudo */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				B24E9C932DA39E0E003FFBB6 /* Exceptions for "Cloudo" folder in "Cloudo" target */,
+			);
 			path = Cloudo;
 			sourceTree = "<group>";
 		};
@@ -83,14 +71,6 @@
 		B2B33A5A2D7A165D0049B6C8 /* CloudoUITests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = CloudoUITests;
-			sourceTree = "<group>";
-		};
-		B2DC3A872D7DA3430092E500 /* CloudoWidgets */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-				B2DC3A9B2D7DA3430092E500 /* Exceptions for "CloudoWidgets" folder in "CloudoWidgetsExtension" target */,
-			);
-			path = CloudoWidgets;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -117,15 +97,6 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		B2DC3A7E2D7DA3430092E500 /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				B2DC3A862D7DA3430092E500 /* SwiftUI.framework in Frameworks */,
-				B2DC3A842D7DA3430092E500 /* WidgetKit.framework in Frameworks */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -135,7 +106,6 @@
 				B2B33A3A2D7A165C0049B6C8 /* Cloudo */,
 				B2B33A502D7A165D0049B6C8 /* CloudoTests */,
 				B2B33A5A2D7A165D0049B6C8 /* CloudoUITests */,
-				B2DC3A872D7DA3430092E500 /* CloudoWidgets */,
 				B2DC3A822D7DA3430092E500 /* Frameworks */,
 				B2B33A392D7A165C0049B6C8 /* Products */,
 			);
@@ -147,7 +117,6 @@
 				B2B33A382D7A165C0049B6C8 /* Cloudo.app */,
 				B2B33A4D2D7A165D0049B6C8 /* CloudoTests.xctest */,
 				B2B33A572D7A165D0049B6C8 /* CloudoUITests.xctest */,
-				B2DC3A812D7DA3430092E500 /* CloudoWidgetsExtension.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -176,7 +145,6 @@
 			buildRules = (
 			);
 			dependencies = (
-				B2DC3A962D7DA3430092E500 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				B2B33A3A2D7A165C0049B6C8 /* Cloudo */,
@@ -234,28 +202,6 @@
 			productReference = B2B33A572D7A165D0049B6C8 /* CloudoUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
-		B2DC3A802D7DA3430092E500 /* CloudoWidgetsExtension */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = B2DC3A9C2D7DA3430092E500 /* Build configuration list for PBXNativeTarget "CloudoWidgetsExtension" */;
-			buildPhases = (
-				B2DC3A7D2D7DA3430092E500 /* Sources */,
-				B2DC3A7E2D7DA3430092E500 /* Frameworks */,
-				B2DC3A7F2D7DA3430092E500 /* Resources */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-			);
-			fileSystemSynchronizedGroups = (
-				B2DC3A872D7DA3430092E500 /* CloudoWidgets */,
-			);
-			name = CloudoWidgetsExtension;
-			packageProductDependencies = (
-			);
-			productName = CloudoWidgetsExtension;
-			productReference = B2DC3A812D7DA3430092E500 /* CloudoWidgetsExtension.appex */;
-			productType = "com.apple.product-type.app-extension";
-		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -277,9 +223,6 @@
 						CreatedOnToolsVersion = 16.2;
 						TestTargetID = B2B33A372D7A165C0049B6C8;
 					};
-					B2DC3A802D7DA3430092E500 = {
-						CreatedOnToolsVersion = 16.2;
-					};
 				};
 			};
 			buildConfigurationList = B2B33A332D7A165C0049B6C8 /* Build configuration list for PBXProject "Cloudo" */;
@@ -299,7 +242,6 @@
 				B2B33A372D7A165C0049B6C8 /* Cloudo */,
 				B2B33A4C2D7A165D0049B6C8 /* CloudoTests */,
 				B2B33A562D7A165D0049B6C8 /* CloudoUITests */,
-				B2DC3A802D7DA3430092E500 /* CloudoWidgetsExtension */,
 			);
 		};
 /* End PBXProject section */
@@ -320,13 +262,6 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		B2B33A552D7A165D0049B6C8 /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		B2DC3A7F2D7DA3430092E500 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -357,13 +292,6 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		B2DC3A7D2D7DA3430092E500 /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -376,11 +304,6 @@
 			isa = PBXTargetDependency;
 			target = B2B33A372D7A165C0049B6C8 /* Cloudo */;
 			targetProxy = B2B33A582D7A165D0049B6C8 /* PBXContainerItemProxy */;
-		};
-		B2DC3A962D7DA3430092E500 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = B2DC3A802D7DA3430092E500 /* CloudoWidgetsExtension */;
-			targetProxy = B2DC3A952D7DA3430092E500 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -517,9 +440,11 @@
 				DEVELOPMENT_TEAM = 6C72999Z38;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = "";
+				INFOPLIST_FILE = Cloudo/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Cloudo;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
+				INFOPLIST_KEY_LSSupportsOpeningDocumentsInPlace = YES;
+				INFOPLIST_KEY_NSDocumentsFolderUsageDescription = "Access is needed to import and export your task backups";
 				INFOPLIST_KEY_NSUserNotificationsUsageDescription = "We need to send you reminders about your tasks.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -527,6 +452,7 @@
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UNNotificationExtensionCategory = TASK_REMINDER;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -553,23 +479,25 @@
 				DEVELOPMENT_TEAM = 6C72999Z38;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = "";
+				INFOPLIST_FILE = Cloudo/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Cloudo;
 				INFOPLIST_KEY_CFBundleURLTypes = "[{\"CFBundleTypeRole\":\"Editor\",\"CFBundleURLName\":\"com.rushi.Cloudo\",\"CFBundleURLSchemes\":[\"cloudo\"]}]";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
+				INFOPLIST_KEY_LSSupportsOpeningDocumentsInPlace = YES;
+				INFOPLIST_KEY_NSDocumentsFolderUsageDescription = "Access is needed to import and export your task backups";
 				INFOPLIST_KEY_NSUserNotificationsUsageDescription = "We need to send you reminders about your tasks.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UIUserInterfaceStyle = Light;
 				INFOPLIST_KEY_UNNotificationExtensionCategory = TASK_REMINDER;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0.1;
+				MARKETING_VERSION = 1.0.2;
 				PRODUCT_BUNDLE_IDENTIFIER = com.rushi.Cloudo;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -650,62 +578,6 @@
 			};
 			name = Release;
 		};
-		B2DC3A992D7DA3430092E500 /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
-				CODE_SIGN_ENTITLEMENTS = CloudoWidgetsExtension.entitlements;
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 6C72999Z38;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = CloudoWidgets/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = CloudoWidgets;
-				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-					"@executable_path/../../Frameworks",
-				);
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.rushi.Cloudo.CloudoWidgets;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SKIP_INSTALL = YES;
-				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
-			};
-			name = Debug;
-		};
-		B2DC3A9A2D7DA3430092E500 /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
-				CODE_SIGN_ENTITLEMENTS = CloudoWidgetsExtension.entitlements;
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 6C72999Z38;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = CloudoWidgets/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = CloudoWidgets;
-				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-					"@executable_path/../../Frameworks",
-				);
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.rushi.Cloudo.CloudoWidgets;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SKIP_INSTALL = YES;
-				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
-			};
-			name = Release;
-		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -741,15 +613,6 @@
 			buildConfigurations = (
 				B2B33A682D7A165D0049B6C8 /* Debug */,
 				B2B33A692D7A165D0049B6C8 /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
-		B2DC3A9C2D7DA3430092E500 /* Build configuration list for PBXNativeTarget "CloudoWidgetsExtension" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				B2DC3A992D7DA3430092E500 /* Debug */,
-				B2DC3A9A2D7DA3430092E500 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
