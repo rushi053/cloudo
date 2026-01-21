@@ -227,7 +227,7 @@ struct TaskFormView: View {
             }) {
                 HStack {
                     Image(systemName: reminderDate == nil ? "bell" : "bell.fill")
-                        .foregroundStyle(reminderDate == nil ? .secondary : .blue)
+                        .foregroundColor(reminderDate == nil ? .secondary : Color.blue)
                     
                     if let date = reminderDate {
                         VStack(alignment: .leading, spacing: 2) {
@@ -365,7 +365,7 @@ struct TaskFormView: View {
                             
                             if selectedCategory?.id == category.id {
                                 Image(systemName: "checkmark")
-                                    .foregroundStyle(.blue)
+                                    .foregroundColor(Color.blue)
                             }
                         }
                     }

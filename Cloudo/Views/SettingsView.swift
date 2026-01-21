@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import CoreData
 
 struct SettingsView: View {
     
@@ -355,7 +356,7 @@ struct AboutSheet: View {
                     VStack(spacing: Design.Spacing.md) {
                         Image(systemName: "checklist")
                             .font(.system(size: 64))
-                            .foregroundStyle(.blue)
+                            .foregroundColor(Color.blue)
                         
                         Text("Cloudo")
                             .font(Design.Typography.largeTitle)
@@ -399,7 +400,7 @@ struct AboutSheet: View {
         HStack(spacing: Design.Spacing.md) {
             Image(systemName: icon)
                 .font(.system(size: 24))
-                .foregroundStyle(.blue)
+                .foregroundColor(Color.blue)
                 .frame(width: 40)
             
             VStack(alignment: .leading, spacing: 2) {
